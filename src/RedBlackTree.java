@@ -52,7 +52,7 @@ public class RedBlackTree {
 		} else {
 			root = newNode;
 		}
-		// insert1(newNode);
+		insert1(newNode);
 	}
 
 	/*
@@ -92,42 +92,210 @@ public class RedBlackTree {
 				TreeNode predecessor = predecessor(node);
 				replaceNode(node, predecessor);
 				deleteNode(predecessor);
-			}
-			// CASE 3: Deletion of node with one child. call
-			// delete of red black tree IF the node being deleted is a black
-			// node.
-			// (if it's red, then no RBT properties are violated)
-			else if (node.rightChild != null) {
-				boolean moreFixesRequired = false;
-				if (node.isRed == BLACK) {
-					moreFixesRequired = !deleteFix1(node);
-				}
-				// CASE 3.1: 1 child: if the node only has rightChild, replace
-				// node's parent
-				// link to its child.
-				if (node.parent == null) {
-					root = node.rightChild;
-				} else if (node.parent.rightChild == node) {
-					node.parent.rightChild = node.rightChild;
-				} else {
-					node.parent.leftChild = node.rightChild;
-				}
 			} else {
+				// CASE 3: Deletion of node with one child. call
+				// delete of red black tree IF the node being deleted is a black
+				// node.
+				// (if it's red, then no RBT properties are violated)
 				boolean moreFixesRequired = false;
+				TreeNode child = null;
 				if (node.isRed == BLACK) {
 					moreFixesRequired = !deleteFix1(node);
 				}
-				// CASE 3.2: 2 child: if the node only has leftChild, replace
-				// node's parent
-				// link to its child.
-				if (node.parent == null) {
-					root = node.leftChild;
-				} else if (node.parent.rightChild == node) {
-					node.parent.rightChild = node.leftChild;
+				if (node.rightChild != null) {
+					child = node.rightChild;
+					// CASE 3.1: 1 child: if the node only has rightChild,
+					// replace
+					// node's parent
+					// link to its child.
+					if (node.parent == null) {
+						root = node.rightChild;
+						moreFixesRequired = false;
+					} else if (node.parent.rightChild == node) {
+						node.parent.rightChild = node.rightChild;
+					} else {
+						node.parent.leftChild = node.rightChild;
+					}
 				} else {
-					node.parent.leftChild = node.leftChild;
+					// CASE 3.2: 2 child: if the node only has leftChild,
+					// replace
+					// node's parent
+					// link to its child.
+					if (node.parent == null) {
+						root = node.leftChild;
+						moreFixesRequired = false;
+					} else if (node.parent.rightChild == node) {
+						node.parent.rightChild = node.leftChild;
+					} else {
+						node.parent.leftChild = node.leftChild;
+					}
+				}
+				if (moreFixesRequired) {
+					// If child replacing deleted node was previously black, and
+					// not the current root
+					delete2(child);
 				}
 			}
+		}
+	}
+
+	/*
+	 * Case 1: N is the new root. In this case, we are done. We removed one
+	 * black node from every path, and the new root is black, so the properties
+	 * are preserved.
+	 */
+	void delete1(TreeNode nodeN) {
+		if (nodeN.parent != null) {
+			delete2(nodeN);
+		} else {
+			root = nodeN;
+		}
+	}
+
+	/*
+	 * If child replacing deleted node was previously black, and not the current
+	 * root. Case 2: S is red. In this case we reverse the colors of P and S,
+	 * and then rotate left at P, turning S into N's grandparent. Note that P
+	 * has to be black as it had a red child. The resulting subtree has a path
+	 * short one black node so we are not done. Now N has a black sibling and a
+	 * red parent, so we can proceed to step 4, 5, or 6. (Its new sibling is
+	 * black because it was once the child of the red S.) In later cases, we
+	 * will relabel N's new sibling as S.
+	 */
+	void delete2(TreeNode nodeN) {
+		TreeNode nodeS = sibling(nodeN);
+		if (nodeS.isRed == RED) {
+			nodeN.parent.isRed = RED;
+			nodeS.isRed = BLACK;
+			if (nodeN == nodeN.parent.leftChild) {
+				leftRotate(nodeN.parent);
+			} else {
+				rightRotate(nodeN.parent);
+			}
+		}
+		delete3(nodeN);
+	}
+
+	/*
+	 * Case 3: P, S, and S's children are black. In this case, we simply repaint
+	 * S red. The result is that all paths passing through S, which are
+	 * precisely those paths not passing through N, have one less black node.
+	 * Because deleting N's original parent made all paths passing through N
+	 * have one less black node, this evens things up. However, all paths
+	 * through P now have one fewer black node than paths that do not pass
+	 * through P, so property 5 (all paths from any given node to its leaf nodes
+	 * contain the same number of black nodes) is still violated. To correct
+	 * this, we perform the rebalancing procedure on P, starting at case 1.
+	 */
+	void delete3(TreeNode nodeN) {
+		TreeNode nodeS = sibling(nodeN);
+		if (nodeN.parent.isRed == BLACK && nodeS.isRed == BLACK && nodeS.leftChild.isRed == BLACK
+				&& nodeS.rightChild.isRed == BLACK) {
+			nodeS.isRed = RED;
+			delete1(nodeN.parent);
+		} else {
+			delete4(nodeN);
+		}
+	}
+
+	/*
+	 * Case 4: S and S's children are black, but P is red. In this case, we
+	 * simply exchange the colors of S and P. This does not affect the number of
+	 * black nodes on paths going through S, but it does add one to the number
+	 * of black nodes on paths going through N, making up for the deleted black
+	 * node on those paths.
+	 */
+	void delete4(TreeNode nodeN) {
+		TreeNode nodeS = sibling(nodeN);
+		if (nodeN.parent.isRed == RED && nodeS.isRed == BLACK && nodeS.leftChild.isRed == BLACK
+				&& nodeS.rightChild.isRed == BLACK) {
+			nodeS.isRed = RED;
+			nodeN.parent.isRed = BLACK;
+		} else {
+			delete5(nodeN);
+		}
+	}
+
+	/*
+	 * Case 5: S is black, S's left child is red, S's right child is black, and
+	 * N is the left child of its parent. In this case we rotate right at S, so
+	 * that S's left child becomes S's parent and N's new sibling. We then
+	 * exchange the colors of S and its new parent. All paths still have the
+	 * same number of black nodes, but now N has a black sibling whose right
+	 * child is red, so we fall into case 6. Neither N nor its parent are
+	 * affected by this transformation. (Again, for case 6, we relabel N's new
+	 * sibling as S.)
+	 */
+	void delete5(TreeNode nodeN) {
+		TreeNode nodeS = sibling(nodeN);
+		if (nodeS.isRed == BLACK) {
+			/*
+			 * this if statement is trivial, due to case 2 (even though case 2
+			 * changed the sibling to a sibling's child, the sibling's child
+			 * can't be red, since no red parent can have a red child).
+			 */
+			/*
+			 * the following statements just force the red to be on the left of
+			 * the left of the parent, or right of the right, so case six will
+			 * rotate correctly.
+			 */
+			if (nodeN == nodeN.parent.leftChild && nodeS.rightChild.isRed == BLACK && nodeS.leftChild.isRed == RED) {
+				/* this last test is trivial too due to cases 2-4. */
+				nodeS.isRed = RED;
+				nodeS.leftChild.isRed = BLACK;
+				rightRotate(nodeS);
+			} else if (nodeN == nodeN.parent.rightChild && nodeS.leftChild.isRed == BLACK
+					&& nodeS.rightChild.isRed == RED) {
+				/* this last test is trivial too due to cases 2-4. */
+				nodeS.isRed = RED;
+				nodeS.rightChild.isRed = BLACK;
+				leftRotate(nodeS);
+			}
+		}
+		delete6(nodeN);
+	}
+
+	/*
+	 * Case 6: S is black, S's right child is red, and N is the left child of
+	 * its parent P. In this case we rotate left at P, so that S becomes the
+	 * parent of P and S's right child. We then exchange the colors of P and S,
+	 * and make S's right child black. The subtree still has the same color at
+	 * its root, so Properties 4 (Both children of every red node are black) and
+	 * 5 (All paths from any given node to its leaf nodes contain the same
+	 * number of black nodes) are not violated. However, N now has one
+	 * additional black ancestor: either P has become black, or it was black and
+	 * S was added as a black grandparent. Thus, the paths passing through N
+	 * pass through one additional black node.
+	 * 
+	 * Meanwhile, if a path does not go through N, then there are two
+	 * possibilities:
+	 * 
+	 * It goes through N's new sibling SL, a node with arbitrary color and the
+	 * root of the subtree labeled 3 (s. diagram). Then, it must go through S
+	 * and P, both formerly and currently, as they have only exchanged colors
+	 * and places. Thus the path contains the same number of black nodes. It
+	 * goes through N's new uncle, S's right child. Then, it formerly went
+	 * through S, S's parent, and S's right child SR (which was red), but now
+	 * only goes through S, which has assumed the color of its former parent,
+	 * and S's right child, which has changed from red to black (assuming S's
+	 * color: black). The net effect is that this path goes through the same
+	 * number of black nodes. Either way, the number of black nodes on these
+	 * paths does not change. Thus, we have restored Properties 4 (Both children
+	 * of every red node are black) and 5 (All paths from any given node to its
+	 * leaf nodes contain the same number of black nodes).
+	 */
+	void delete6(TreeNode nodeN) {
+		TreeNode nodeS = sibling(nodeN);
+
+		nodeS.isRed = nodeN.parent.isRed;
+		nodeN.parent.isRed = BLACK;
+
+		if (nodeN == nodeN.parent.leftChild) {
+			nodeS.rightChild.isRed = BLACK;
+			leftRotate(nodeN.parent);
+		} else {
+			nodeS.leftChild.isRed = BLACK;
+			rightRotate(nodeN.parent);
 		}
 	}
 
@@ -172,20 +340,21 @@ public class RedBlackTree {
 		replaceeNode.count = replacerNode.count;
 	}
 
-	/*
-	 * Returns the successor of the node, i.e. the left-most child in it's right
-	 * subtree.
-	 */
-	TreeNode successor(TreeNode node) {
-		TreeNode successor = null;
-		if (node != null) {
-			successor = node.rightChild;
-			while (successor != null && successor.leftChild != null) {
-				successor = successor.leftChild;
-			}
-		}
-		return successor;
-	}
+	// /*
+	// * Returns the successor of the node, i.e. the left-most child in it's
+	// right
+	// * subtree.
+	// */
+	// TreeNode successor(TreeNode node) {
+	// TreeNode successor = null;
+	// if (node != null) {
+	// successor = node.rightChild;
+	// while (successor != null && successor.leftChild != null) {
+	// successor = successor.leftChild;
+	// }
+	// }
+	// return successor;
+	// }
 
 	/*
 	 * Returns the predecessor of the node, i.e. the right-most child in it's
@@ -376,9 +545,8 @@ public class RedBlackTree {
 	private void recursivelyPrintTree(TreeNode node, String indentDots) {
 		if (node != null) {
 			recursivelyPrintTree(node.rightChild, indentDots + ".");
-			// System.out.println(indentDots + node.key + " " + node.isRed +
-			// "\n");
-			System.out.println(indentDots + node.key + "\n");
+			System.out.println(indentDots + node.key + " " + node.isRed + "\n");
+			// System.out.println(indentDots + node.key + "\n");
 			recursivelyPrintTree(node.leftChild, indentDots + ".");
 		}
 	}
@@ -388,14 +556,18 @@ public class RedBlackTree {
 		RedBlackTree tree = new RedBlackTree();
 		for (int i : list) {
 			tree.insert(i, 1);
-			System.out.println("\nThe tree after insertion of " + i);
-			tree.printTree();
+			// System.out.println("\nThe tree after insertion of " + i);
+			// tree.printTree();
 		}
+		System.out.println("\nThe tree after insertions");
+		tree.printTree();
 		int[] delList = { 60, 20, 105, 85, 80, 10 };
 		for (int i : delList) {
 			tree.delete(i);
 			System.out.println("\nThe tree after deletion of " + i);
 			tree.printTree();
 		}
+		System.out.println("\nThe tree after deletions");
+		tree.printTree();
 	}
 }
