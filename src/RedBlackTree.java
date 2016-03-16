@@ -17,7 +17,8 @@ public class RedBlackTree {
 		int subtreeCount; // count of number of treeNodes in the subtree rooted
 							// at this node. minimum = 1 (the node itself)
 		TreeNode parent, leftChild, rightChild;
-		boolean isRed; // Also the color of the node. By default it's RED (true)
+		boolean isRed; // Also the color of the node. By default (by using the
+						// constructor) it's RED (true)
 
 		TreeNode(int key, int count) {
 			this.key = key;
@@ -27,13 +28,16 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Binary search tree insert.
+	 */
 	void insert(int key, int count) {
 		TreeNode newNode = new TreeNode(key, count);
 		if (root != null) {
 			TreeNode parent = null, tempNode = root;
 			while (tempNode != null) {
 				parent = tempNode;
-				if (key <= tempNode.key) {
+				if (key < tempNode.key) {
 					tempNode = tempNode.leftChild;
 				} else {
 					tempNode = tempNode.rightChild;
@@ -48,7 +52,154 @@ public class RedBlackTree {
 		} else {
 			root = newNode;
 		}
-		insert1(newNode);
+		// insert1(newNode);
+	}
+
+	/*
+	 * Binary search tree delete after finding the node with the given key.
+	 */
+	void delete(int key) {
+		if (root != null) {
+			// First find the node to delete
+			TreeNode node = root;
+			while (node != null && node.key != key) {
+				if (key < node.key) {
+					node = node.leftChild;
+				} else {
+					node = node.rightChild;
+				}
+			}
+			if (node != null) { // node isn't null implies we've found the node
+								// to delete.
+				deleteNode(node);
+			}
+		}
+	}
+
+	/*
+	 * deletes the given node.
+	 */
+	void deleteNode(TreeNode node) {
+		if (node != null) {
+			if (node.leftChild == null && node.rightChild == null) {
+				// CASE 1: No children: if there are no children, delete the
+				// node directly.
+				deleteNodeReferences(node);
+			} else if (node.leftChild != null && node.rightChild != null) {
+				// CASE 2: 2 children: If the node has two children replace
+				// node with its predecessor, and delete the predecessor
+				// recursively.
+				TreeNode predecessor = predecessor(node);
+				replaceNode(node, predecessor);
+				deleteNode(predecessor);
+			}
+			// CASE 3: Deletion of node with one child. call
+			// delete of red black tree IF the node being deleted is a black
+			// node.
+			// (if it's red, then no RBT properties are violated)
+			else if (node.rightChild != null) {
+				boolean moreFixesRequired = false;
+				if (node.isRed == BLACK) {
+					moreFixesRequired = !deleteFix1(node);
+				}
+				// CASE 3.1: 1 child: if the node only has rightChild, replace
+				// node's parent
+				// link to its child.
+				if (node.parent == null) {
+					root = node.rightChild;
+				} else if (node.parent.rightChild == node) {
+					node.parent.rightChild = node.rightChild;
+				} else {
+					node.parent.leftChild = node.rightChild;
+				}
+			} else {
+				boolean moreFixesRequired = false;
+				if (node.isRed == BLACK) {
+					moreFixesRequired = !deleteFix1(node);
+				}
+				// CASE 3.2: 2 child: if the node only has leftChild, replace
+				// node's parent
+				// link to its child.
+				if (node.parent == null) {
+					root = node.leftChild;
+				} else if (node.parent.rightChild == node) {
+					node.parent.rightChild = node.leftChild;
+				} else {
+					node.parent.leftChild = node.leftChild;
+				}
+			}
+		}
+	}
+
+	/*
+	 * If the node to be deleted is black with ONE child, and the child is red,
+	 * simply repaint the child black.
+	 */
+	boolean deleteFix1(TreeNode node) {
+		if (node.isRed == BLACK && node.rightChild != null && node.rightChild.isRed == RED) {
+			node.rightChild.isRed = BLACK;
+			return true;
+		} else if (node.isRed == BLACK && node.leftChild != null && node.leftChild.isRed == RED) {
+			node.leftChild.isRed = BLACK;
+			return true;
+		}
+		return false;
+	}
+
+	/*
+	 * "Deletes" a node by removing all references to it and setting the parent
+	 * reference to null;
+	 */
+	void deleteNodeReferences(TreeNode node) {
+		if (node != null) {
+			if (node == root) {
+				root = null;
+			} else {
+				if (node.parent.leftChild == node) {
+					node.parent.leftChild = null;
+				} else {
+					node.parent.rightChild = null;
+				}
+			}
+		}
+	}
+
+	/*
+	 * Copy all the contents of one node to another.
+	 */
+	void replaceNode(TreeNode replaceeNode, TreeNode replacerNode) {
+		replaceeNode.key = replacerNode.key;
+		replaceeNode.count = replacerNode.count;
+	}
+
+	/*
+	 * Returns the successor of the node, i.e. the left-most child in it's right
+	 * subtree.
+	 */
+	TreeNode successor(TreeNode node) {
+		TreeNode successor = null;
+		if (node != null) {
+			successor = node.rightChild;
+			while (successor != null && successor.leftChild != null) {
+				successor = successor.leftChild;
+			}
+		}
+		return successor;
+	}
+
+	/*
+	 * Returns the predecessor of the node, i.e. the right-most child in it's
+	 * left subtree.
+	 */
+	TreeNode predecessor(TreeNode node) {
+		TreeNode predecessor = null;
+		if (node != null) {
+			predecessor = node.leftChild;
+			while (predecessor != null && predecessor.rightChild != null) {
+				predecessor = predecessor.rightChild;
+			}
+		}
+		return predecessor;
 	}
 
 	TreeNode grandparent(TreeNode node) {
@@ -65,6 +216,18 @@ public class RedBlackTree {
 				return node.parent.parent.leftChild;
 			} else {
 				return node.parent.parent.rightChild;
+			}
+		} else {
+			return null;
+		}
+	}
+
+	TreeNode sibling(TreeNode node) {
+		if (node != null && node.parent != null) {
+			if (node == node.parent.rightChild) {
+				return node.parent.leftChild;
+			} else {
+				return node.parent.rightChild;
 			}
 		} else {
 			return null;
@@ -207,22 +370,31 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Print the nodes of the tree in an in-order fashion.
+	 * Print the nodes of the tree in an in-order looking (left child towards
+	 * the bottom and right child towards the top) fashion.
 	 */
 	private void recursivelyPrintTree(TreeNode node, String indentDots) {
 		if (node != null) {
 			recursivelyPrintTree(node.rightChild, indentDots + ".");
-			System.out.println(indentDots + node.key + " " + node.isRed + "\n");
+			// System.out.println(indentDots + node.key + " " + node.isRed +
+			// "\n");
+			System.out.println(indentDots + node.key + "\n");
 			recursivelyPrintTree(node.leftChild, indentDots + ".");
 		}
 	}
 
 	public static void main(String[] args) {
-		int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3 };
+		int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3, 64, 105, 46, 29, 61 };
 		RedBlackTree tree = new RedBlackTree();
 		for (int i : list) {
 			tree.insert(i, 1);
 			System.out.println("\nThe tree after insertion of " + i);
+			tree.printTree();
+		}
+		int[] delList = { 60, 20, 105, 85, 80, 10 };
+		for (int i : delList) {
+			tree.delete(i);
+			System.out.println("\nThe tree after deletion of " + i);
 			tree.printTree();
 		}
 	}
