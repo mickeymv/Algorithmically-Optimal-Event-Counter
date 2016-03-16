@@ -43,7 +43,7 @@ public class RedBlackTree {
 					tempNode = tempNode.rightChild;
 				}
 			}
-			if (key <= parent.key) {
+			if (key < parent.key) {
 				parent.leftChild = newNode;
 			} else {
 				parent.rightChild = newNode;
@@ -185,7 +185,7 @@ public class RedBlackTree {
 	 * through P now have one fewer black node than paths that do not pass
 	 * through P, so property 5 (all paths from any given node to its leaf nodes
 	 * contain the same number of black nodes) is still violated. To correct
-	 * this, we perform the rebalancing procedure on P, starting at case 1.
+	 * this, we perform the re-balancing procedure on P, starting at case 1.
 	 */
 	void delete3(TreeNode nodeN) {
 		TreeNode nodeS = sibling(nodeN);
@@ -499,9 +499,13 @@ public class RedBlackTree {
 	}
 
 	void leftRotate(TreeNode node) {
+		System.out.println("\nInside leftRotate of " + node.key);
 		if (node != null && node.rightChild != null) {
 			TreeNode rightChild = node.rightChild, grandparent = node.parent;
 			node.rightChild = rightChild.leftChild;
+			if (node.rightChild != null) {
+				node.rightChild.parent = node;
+			}
 			node.parent = rightChild;
 			rightChild.leftChild = node;
 			rightChild.parent = grandparent;
@@ -511,14 +515,20 @@ public class RedBlackTree {
 				} else {
 					grandparent.rightChild = rightChild;
 				}
+			} else {
+				root = rightChild;
 			}
 		}
 	}
 
 	void rightRotate(TreeNode node) {
+		System.out.println("\nInside rightRotate of " + node.key);
 		if (node != null && node.leftChild != null) {
 			TreeNode leftChild = node.leftChild, grandparent = node.parent;
 			node.leftChild = leftChild.rightChild;
+			if (node.leftChild != null) {
+				node.leftChild.parent = node;
+			}
 			node.parent = leftChild;
 			leftChild.rightChild = node;
 			leftChild.parent = grandparent;
@@ -528,6 +538,8 @@ public class RedBlackTree {
 				} else {
 					grandparent.rightChild = leftChild;
 				}
+			} else {
+				root = leftChild;
 			}
 		}
 	}
