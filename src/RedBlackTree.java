@@ -28,6 +28,29 @@ public class RedBlackTree {
 		}
 	}
 
+	TreeNode getNullLeaf(TreeNode parent, boolean onRight) {
+		TreeNode nullLeaf = new TreeNode(-1, -1);
+		nullLeaf.subtreeCount = -1;
+		nullLeaf.isRed = BLACK;
+		nullLeaf.parent = parent;
+		if (onRight) {
+			parent.rightChild = nullLeaf;
+		} else {
+			parent.leftChild = nullLeaf;
+		}
+		return nullLeaf;
+	}
+
+	/*
+	 * Removes the null leaf from the RBT and removes its parent's references to
+	 * it.
+	 */
+	void cleanIfNullLeaf(TreeNode node) {
+		if (node.key == -1) {
+			deleteNodeReferences(node);
+		}
+	}
+
 	/*
 	 * Binary search tree insert.
 	 */
@@ -81,11 +104,7 @@ public class RedBlackTree {
 	 */
 	void deleteNode(TreeNode node) {
 		if (node != null) {
-			if (node.leftChild == null && node.rightChild == null) {
-				// CASE 1: No children: if there are no children, delete the
-				// node directly.
-				deleteNodeReferences(node);
-			} else if (node.leftChild != null && node.rightChild != null) {
+			if (node.leftChild != null && node.rightChild != null) {
 				// CASE 2: 2 children: If the node has two children replace
 				// node with its predecessor, and delete the predecessor
 				// recursively.
@@ -93,7 +112,7 @@ public class RedBlackTree {
 				replaceNode(node, predecessor);
 				deleteNode(predecessor);
 			} else {
-				// CASE 3: Deletion of node with one child. call
+				// CASE 3: Deletion of node with "utmost" one child. call
 				// delete of red black tree IF the node being deleted is a black
 				// node.
 				// (if it's red, then no RBT properties are violated)
@@ -113,10 +132,23 @@ public class RedBlackTree {
 						moreFixesRequired = false;
 					} else if (node.parent.rightChild == node) {
 						node.parent.rightChild = node.rightChild;
+						if (child == null) {
+							// If there are no children, add a null dummy leaf
+							// so that re-balancing can take place if required,
+							// then delete it.
+							child = getNullLeaf(node.parent, true);
+						}
 					} else {
 						node.parent.leftChild = node.rightChild;
+						if (child == null) {
+							// If there are no children, add a null dummy leaf
+							// so that re-balancing can take place if required,
+							// then delete it.
+							child = getNullLeaf(node.parent, false);
+						}
 					}
 				} else {
+					child = node.leftChild;
 					// CASE 3.2: 2 child: if the node only has leftChild,
 					// replace
 					// node's parent
@@ -126,15 +158,29 @@ public class RedBlackTree {
 						moreFixesRequired = false;
 					} else if (node.parent.rightChild == node) {
 						node.parent.rightChild = node.leftChild;
+						if (child == null) {
+							// If there are no children, add a null dummy leaf
+							// so that re-balancing can take place if required,
+							// then delete it.
+							child = getNullLeaf(node.parent, true);
+						}
 					} else {
 						node.parent.leftChild = node.leftChild;
+						if (child == null) {
+							// If there are no children, add a null dummy leaf
+							// so that re-balancing can take place if required,
+							// then delete it.
+							child = getNullLeaf(node.parent, false);
+						}
 					}
 				}
 				if (moreFixesRequired) {
 					// If child replacing deleted node was previously black, and
 					// not the current root
 					delete2(child);
+					cleanIfNullLeaf(child);
 				}
+				cleanIfNullLeaf(child);
 			}
 		}
 	}
@@ -189,8 +235,11 @@ public class RedBlackTree {
 	 */
 	void delete3(TreeNode nodeN) {
 		TreeNode nodeS = sibling(nodeN);
-		if (nodeN.parent.isRed == BLACK && nodeS.isRed == BLACK && nodeS.leftChild.isRed == BLACK
-				&& nodeS.rightChild.isRed == BLACK) {
+		if (nodeN.parent.isRed == BLACK && nodeS.isRed == BLACK
+				&& (nodeS.leftChild == null || nodeS.leftChild.isRed == BLACK)
+				&& (nodeS.rightChild == null || nodeS.rightChild.isRed == BLACK)) {
+			// the children being null implies they're black (assume leaf null
+			// nodes are BLACK)
 			nodeS.isRed = RED;
 			delete1(nodeN.parent);
 		} else {
@@ -207,8 +256,11 @@ public class RedBlackTree {
 	 */
 	void delete4(TreeNode nodeN) {
 		TreeNode nodeS = sibling(nodeN);
-		if (nodeN.parent.isRed == RED && nodeS.isRed == BLACK && nodeS.leftChild.isRed == BLACK
-				&& nodeS.rightChild.isRed == BLACK) {
+		if (nodeN.parent.isRed == RED && nodeS.isRed == BLACK
+				&& (nodeS.leftChild == null || nodeS.leftChild.isRed == BLACK)
+				&& (nodeS.rightChild == null || nodeS.rightChild.isRed == BLACK)) {
+			// the children being null implies they're black (assume leaf null
+			// nodes are BLACK)
 			nodeS.isRed = RED;
 			nodeN.parent.isRed = BLACK;
 		} else {
@@ -239,13 +291,20 @@ public class RedBlackTree {
 			 * the left of the parent, or right of the right, so case six will
 			 * rotate correctly.
 			 */
-			if (nodeN == nodeN.parent.leftChild && nodeS.rightChild.isRed == BLACK && nodeS.leftChild.isRed == RED) {
+			if (nodeN == nodeN.parent.leftChild && (nodeS.rightChild == null || nodeS.rightChild.isRed == BLACK)
+					&& (nodeS.leftChild != null && nodeS.leftChild.isRed == RED)) {
+				// the children being null implies they're black (assume leaf
+				// null
+				// nodes are BLACK)
 				/* this last test is trivial too due to cases 2-4. */
 				nodeS.isRed = RED;
 				nodeS.leftChild.isRed = BLACK;
 				rightRotate(nodeS);
-			} else if (nodeN == nodeN.parent.rightChild && nodeS.leftChild.isRed == BLACK
-					&& nodeS.rightChild.isRed == RED) {
+			} else if (nodeN == nodeN.parent.rightChild && (nodeS.leftChild == null || nodeS.leftChild.isRed == BLACK)
+					&& (nodeS.rightChild != null && nodeS.rightChild.isRed == RED)) {
+				// the children being null implies they're black (assume leaf
+				// null
+				// nodes are BLACK)
 				/* this last test is trivial too due to cases 2-4. */
 				nodeS.isRed = RED;
 				nodeS.rightChild.isRed = BLACK;
@@ -565,15 +624,17 @@ public class RedBlackTree {
 
 	public static void main(String[] args) {
 		int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3, 64, 105, 46, 29, 61 };
+		// int[] list = { 20, 10, 35, 5, 18, 2, 4, 3 };
 		RedBlackTree tree = new RedBlackTree();
 		for (int i : list) {
 			tree.insert(i, 1);
-			// System.out.println("\nThe tree after insertion of " + i);
-			// tree.printTree();
+			System.out.println("\nThe tree after insertion of " + i);
+			tree.printTree();
 		}
 		System.out.println("\nThe tree after insertions");
 		tree.printTree();
 		int[] delList = { 60, 20, 105, 85, 80, 10 };
+		// int[] delList = { 85 };
 		for (int i : delList) {
 			tree.delete(i);
 			System.out.println("\nThe tree after deletion of " + i);
