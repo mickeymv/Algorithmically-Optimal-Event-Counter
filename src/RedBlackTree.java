@@ -14,8 +14,12 @@ public class RedBlackTree {
 	private class TreeNode {
 		int key; // the ID.
 		int count; // number of active events with the given ID.
-		int subtreeCount; // count of number of treeNodes in the subtree rooted
-							// at this node. minimum = 1 (the node itself)
+		int subtreeCount; // total count of all events' counts in the subtree
+							// rooted
+							// at this node. minimum = count (the count of the
+							// node itself)
+		// subtreeCount = leftChild.subtreeCount + rightChild.subtreeCount +
+		// count
 		TreeNode parent, leftChild, rightChild;
 		boolean isRed; // Also the color of the node. By default (by using the
 						// constructor) it's RED (true)
@@ -23,7 +27,7 @@ public class RedBlackTree {
 		TreeNode(int key, int count) {
 			this.key = key;
 			this.count = count;
-			this.subtreeCount = 1;
+			this.subtreeCount = count;
 			this.isRed = RED; // true
 		}
 	}
@@ -163,8 +167,18 @@ public class RedBlackTree {
 			while (tempNode != null) {
 				parent = tempNode;
 				if (key < tempNode.key) {
+					tempNode.subtreeCount += newNode.count; // increase count of
+															// ancestors of the
+															// newNode with it's
+															// count when we go
+															// down the tree.
 					tempNode = tempNode.leftChild;
 				} else {
+					tempNode.subtreeCount += newNode.count; // increase count of
+															// ancestors of the
+															// newNode with it's
+															// count when we go
+															// down the tree.
 					tempNode = tempNode.rightChild;
 				}
 			}
@@ -178,6 +192,22 @@ public class RedBlackTree {
 			root = newNode;
 		}
 		insert1(newNode);
+		// newNode.subtreeCount = newNode.count +
+		// getSubtreeEventCount(newNode.leftChild)
+		// + getSubtreeEventCount(newNode.rightChild);
+		// not required? will be
+		// done during the insert process and during rotations?
+	}
+
+	/*
+	 * get the count of the node if it exists, if not, return zero.
+	 */
+	int getSubtreeEventCount(TreeNode node) {
+		if (node != null) {
+			return node.subtreeCount;
+		} else {
+			return 0;
+		}
 	}
 
 	/*
@@ -625,19 +655,51 @@ public class RedBlackTree {
 		if (grandparent.leftChild == parent && parent.rightChild == node) {
 			// left-rotate
 			parent.rightChild = node.leftChild;
+			if (parent.rightChild != null) {
+				parent.rightChild.parent = parent;
+			}
+			// does it change anything? set
+			// the previous node's child
+			// pointer to parent
 			parent.parent = node;
 			node.leftChild = parent;
 			node.parent = grandparent;
 			grandparent.leftChild = node;
 			node = node.leftChild;
+			int previousParentSubtreeCount = node.subtreeCount;
+			/*
+			 * since this "node" was the parent before rotation, and its right
+			 * node moved above it to become its parent, we need to subtract
+			 * that count. Therefore; previousParent's subtreeCount -=
+			 * previousRightChild'sSubtreeCount -
+			 * previousRightChild'sLeftChild'sSubtreeCount;
+			 */
+			node.subtreeCount -= node.parent.subtreeCount - getSubtreeEventCount(node.rightChild);
+			node.parent.subtreeCount = previousParentSubtreeCount;
 		} else if (grandparent.rightChild == parent && parent.leftChild == node) {
 			// right-rotate
 			parent.leftChild = node.rightChild;
+			if (parent.leftChild != null) {
+				parent.leftChild.parent = parent;
+			}
+			// does it change anything? set
+			// the previous node's child
+			// pointer to parent
 			parent.parent = node;
 			node.rightChild = parent;
 			node.parent = grandparent;
 			grandparent.rightChild = node;
 			node = node.rightChild;
+			int previousParentSubtreeCount = node.subtreeCount;
+			/*
+			 * since this "node" was the parent before rotation, and its left
+			 * node moved above it to become its parent, we need to subtract
+			 * that count. Therefore; previousParent's subtreeCount -=
+			 * previousLeftChild'sSubtreeCount -
+			 * previousLeftChild'sRightChild'sSubtreeCount;
+			 */
+			node.subtreeCount -= node.parent.subtreeCount - getSubtreeEventCount(node.leftChild);
+			node.parent.subtreeCount = previousParentSubtreeCount;
 		}
 		insert5(node);
 	}
@@ -681,6 +743,9 @@ public class RedBlackTree {
 			} else {
 				root = rightChild;
 			}
+			int previousParentSubtreeCount = node.subtreeCount;
+			node.subtreeCount -= node.parent.subtreeCount - getSubtreeEventCount(node.rightChild);
+			node.parent.subtreeCount = previousParentSubtreeCount;
 		}
 	}
 
@@ -704,6 +769,9 @@ public class RedBlackTree {
 			} else {
 				root = leftChild;
 			}
+			int previousParentSubtreeCount = node.subtreeCount;
+			node.subtreeCount -= node.parent.subtreeCount - getSubtreeEventCount(node.leftChild);
+			node.parent.subtreeCount = previousParentSubtreeCount;
 		}
 	}
 
@@ -720,7 +788,8 @@ public class RedBlackTree {
 	private void recursivelyPrintTree(TreeNode node, String indentDots) {
 		if (node != null) {
 			recursivelyPrintTree(node.rightChild, indentDots + ".");
-			System.out.println(indentDots + node.key + " " + node.isRed + "\n");
+			System.out.println(indentDots + node.key + ", isRed=" + node.isRed + ", count=" + node.count
+					+ ", subTreeCount= " + node.subtreeCount + "\n");
 			// System.out.println(indentDots + node.key + "\n");
 			recursivelyPrintTree(node.leftChild, indentDots + ".");
 		}
@@ -733,7 +802,7 @@ public class RedBlackTree {
 		// int[] list = { 6, 4, 8, 2, 5, 7, 9 };
 		RedBlackTree tree = new RedBlackTree();
 		for (int i : list) {
-			tree.insert(i, 1);
+			tree.insert(i, i);
 			System.out.println("\nThe tree after insertion of " + i);
 			tree.printTree();
 		}
@@ -742,12 +811,12 @@ public class RedBlackTree {
 		int[] delList = { 60, 20, 105, 85, 80, 10 };
 		// int[] delList = { 85 };
 		// int[] delList = { 9, 8, 7 };//
-		for (int i : delList) {
-			tree.delete(i);
-			System.out.println("\nThe tree after deletion of " + i);
-			tree.printTree();
-		}
-		System.out.println("\nThe tree after deletions");
-		tree.printTree();
+		// for (int i : delList) {
+		// tree.delete(i);
+		// System.out.println("\nThe tree after deletion of " + i);
+		// tree.printTree();
+		// }
+		// System.out.println("\nThe tree after deletions");
+		// tree.printTree();
 	}
 }
