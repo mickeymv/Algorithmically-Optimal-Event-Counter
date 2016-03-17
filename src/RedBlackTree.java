@@ -128,52 +128,41 @@ public class RedBlackTree {
 					// node's parent
 					// link to its child.
 					if (node.parent == null) {
-						root = node.rightChild;
+						root = child;
 						moreFixesRequired = false;
 					} else if (node.parent.rightChild == node) {
-						node.parent.rightChild = node.rightChild;
-						if (child == null) {
-							// If there are no children, add a null dummy leaf
-							// so that re-balancing can take place if required,
-							// then delete it.
-							child = getNullLeaf(node.parent, true);
-						}
+						node.parent.rightChild = child;
 					} else {
-						node.parent.leftChild = node.rightChild;
-						if (child == null) {
-							// If there are no children, add a null dummy leaf
-							// so that re-balancing can take place if required,
-							// then delete it.
-							child = getNullLeaf(node.parent, false);
-						}
+						node.parent.leftChild = child;
 					}
 				} else {
 					child = node.leftChild;
 					// CASE 3.2: 2 child: if the node only has leftChild,
 					// replace
 					// node's parent
-					// link to its child.
+					// link to its child and vice-versa.
 					if (node.parent == null) {
-						root = node.leftChild;
+						root = child;
 						moreFixesRequired = false;
 					} else if (node.parent.rightChild == node) {
-						node.parent.rightChild = node.leftChild;
 						if (child == null) {
 							// If there are no children, add a null dummy leaf
 							// so that re-balancing can take place if required,
 							// then delete it.
 							child = getNullLeaf(node.parent, true);
 						}
+						node.parent.rightChild = child;
 					} else {
-						node.parent.leftChild = node.leftChild;
 						if (child == null) {
 							// If there are no children, add a null dummy leaf
 							// so that re-balancing can take place if required,
 							// then delete it.
 							child = getNullLeaf(node.parent, false);
 						}
+						node.parent.leftChild = child;
 					}
 				}
+				child.parent = node.parent;
 				if (moreFixesRequired) {
 					// If child replacing deleted node was previously black, and
 					// not the current root
@@ -625,6 +614,8 @@ public class RedBlackTree {
 	public static void main(String[] args) {
 		int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3, 64, 105, 46, 29, 61 };
 		// int[] list = { 20, 10, 35, 5, 18, 2, 4, 3 };
+		// int[] list = { 15, 0, 20, 3, 13, 14, 45, 34, };
+		// int[] list = { 6, 4, 8, 2, 5, 7, 9 };
 		RedBlackTree tree = new RedBlackTree();
 		for (int i : list) {
 			tree.insert(i, 1);
@@ -635,6 +626,7 @@ public class RedBlackTree {
 		tree.printTree();
 		int[] delList = { 60, 20, 105, 85, 80, 10 };
 		// int[] delList = { 85 };
+		// int[] delList = { 9, 8, 7 };//
 		for (int i : delList) {
 			tree.delete(i);
 			System.out.println("\nThe tree after deletion of " + i);
