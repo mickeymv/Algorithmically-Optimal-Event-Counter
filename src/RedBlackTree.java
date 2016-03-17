@@ -28,6 +28,108 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Increase the count of the event theID by m. If theID is not present,
+	 * insert it. Print the count of theID after the addition. Time complexity:
+	 * O(log n).
+	 */
+	void increase(int theIDofEvent, int countIncreaseBy) {
+		TreeNode theEvent = findNode(theIDofEvent);
+		if (theEvent != null) {
+			theEvent.count += countIncreaseBy;
+		} else {
+			insert(theIDofEvent, countIncreaseBy);
+			theEvent = findNode(theIDofEvent);
+		}
+		System.out.println(theEvent.count + "\n");
+	}
+
+	/*
+	 * Decrease the count of theID by m. If theID’s count becomes less than or
+	 * equal to 0, remove theID from the counter. Print the count of theID after
+	 * the deletion, or 0 if theID is removed or not present. Time complexity:
+	 * O(log n).
+	 */
+	void reduce(int theIDofEvent, int decreaseCountBy) {
+		TreeNode theEvent = findNode(theIDofEvent);
+		if (theEvent != null) {
+			theEvent.count -= decreaseCountBy;
+			if (theEvent.count <= 0) {
+				delete(theIDofEvent);
+				System.out.println(0 + "\n");
+			} else {
+				System.out.println(theEvent.count + "\n");
+			}
+		} else {
+			System.out.println(theEvent.count + "\n");
+		}
+	}
+
+	/*
+	 * Print the count of theID. If not present, print 0. Time complexity: O(log
+	 * n).
+	 */
+	void count(int theIDofEvent) {
+		TreeNode theEvent = findNode(theIDofEvent);
+		if (theEvent != null) {
+			System.out.println(theEvent.count + "\n");
+		} else {
+			System.out.println(0 + "\n");
+		}
+	}
+
+	/*
+	 * Print the ID and the count of the event with the lowest ID that is
+	 * greater that theID. Print “0 0”, if there is no next ID. Time complexity:
+	 * O(log n).
+	 */
+	void next(int theIDofEvent) {
+		TreeNode theEvent = findNode(theIDofEvent);
+		if (theEvent != null) {
+			TreeNode successorOfEvent = successor(theEvent);
+			if (successorOfEvent != null) {
+				System.out.println(successorOfEvent.key + " " + successorOfEvent.count + "\n");
+			} else {
+				System.out.println("0 0\n");
+			}
+		} else {
+			System.out.println("0 0\n");
+		}
+	}
+
+	/*
+	 * Print the ID and the count of the event with the greatest key that is
+	 * less that theID. Print “0 0”, if there is no previous ID. Time
+	 * complexity: O(log n).
+	 */
+	void previous(int theIDofEvent) {
+		TreeNode theEvent = findNode(theIDofEvent);
+		if (theEvent != null) {
+			TreeNode predecessorOfEvent = predecessor(theEvent);
+			if (predecessorOfEvent != null) {
+				System.out.println(predecessorOfEvent.key + " " + predecessorOfEvent.count + "\n");
+			} else {
+				System.out.println("0 0\n");
+			}
+		} else {
+			System.out.println("0 0\n");
+		}
+	}
+
+	/*
+	 * Print the total count for IDs between ID1 and ID2 inclusively. Note, ID1
+	 * ≤ ID2. Time complexity: O(log n + s) where s is the number of IDs in the
+	 * range.
+	 */
+	void inRange(int ID1, int ID2) {
+
+	}
+
+	/*
+	 * Create a temporary NULL sentinal node and attach it to the parent node
+	 * for rebalancing purposes while deletion. This should be deleted after the
+	 * complete re-balance process it complete.
+	 */
 	TreeNode getNullLeaf(TreeNode parent, boolean onRight) {
 		TreeNode nullLeaf = new TreeNode(-1, -1);
 		nullLeaf.subtreeCount = -1;
@@ -79,23 +181,37 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Binary search tree delete after finding the node with the given key.
+	 * Find node with the given ID, if not found, return null
 	 */
-	void delete(int key) {
+	TreeNode findNode(int ID) {
 		if (root != null) {
-			// First find the node to delete
+			// First find the node
 			TreeNode node = root;
-			while (node != null && node.key != key) {
-				if (key < node.key) {
+			while (node != null && node.key != ID) {
+				if (ID < node.key) {
 					node = node.leftChild;
 				} else {
 					node = node.rightChild;
 				}
 			}
 			if (node != null) { // node isn't null implies we've found the node
-								// to delete.
-				deleteNode(node);
+				return node;
+			} else {
+				return null;
 			}
+		}
+		return null;
+	}
+
+	/*
+	 * Binary search tree delete after finding the node with the given key.
+	 */
+	void delete(int key) {
+		TreeNode node = findNode(key);
+
+		if (node != null) { // node isn't null implies we've found the node
+							// to delete.
+			deleteNode(node);
 		}
 	}
 
@@ -388,21 +504,20 @@ public class RedBlackTree {
 		replaceeNode.count = replacerNode.count;
 	}
 
-	// /*
-	// * Returns the successor of the node, i.e. the left-most child in it's
-	// right
-	// * subtree.
-	// */
-	// TreeNode successor(TreeNode node) {
-	// TreeNode successor = null;
-	// if (node != null) {
-	// successor = node.rightChild;
-	// while (successor != null && successor.leftChild != null) {
-	// successor = successor.leftChild;
-	// }
-	// }
-	// return successor;
-	// }
+	/*
+	 * Returns the successor of the node, i.e. the left-most child in it's right
+	 * subtree.
+	 */
+	TreeNode successor(TreeNode node) {
+		TreeNode successor = null;
+		if (node != null) {
+			successor = node.rightChild;
+			while (successor != null && successor.leftChild != null) {
+				successor = successor.leftChild;
+			}
+		}
+		return successor;
+	}
 
 	/*
 	 * Returns the predecessor of the node, i.e. the right-most child in it's
