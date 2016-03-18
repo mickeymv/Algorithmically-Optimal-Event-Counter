@@ -3,6 +3,9 @@
  * @author Mickey Vellukunnel
  * 
  *         Implement an event counter using Red-Black tree.
+ * 
+ *         The required functions are; Increase, Reduce, Count, InRange, Next
+ *         and Previous.
  */
 public class RedBlackTree {
 
@@ -41,6 +44,12 @@ public class RedBlackTree {
 		TreeNode theEvent = findNode(theIDofEvent);
 		if (theEvent != null) {
 			theEvent.count += countIncreaseBy;
+			theEvent.subtreeCount += countIncreaseBy;
+			TreeNode temp = theEvent.parent;
+			// Increase the subtreeCounts up the tree by the increased amount.
+			while (temp != null) {
+				temp.subtreeCount += countIncreaseBy;
+			}
 		} else {
 			insert(theIDofEvent, countIncreaseBy);
 			theEvent = findNode(theIDofEvent);
@@ -57,15 +66,23 @@ public class RedBlackTree {
 	void reduce(int theIDofEvent, int decreaseCountBy) {
 		TreeNode theEvent = findNode(theIDofEvent);
 		if (theEvent != null) {
-			theEvent.count -= decreaseCountBy;
-			if (theEvent.count <= 0) {
+			if (theEvent.count <= decreaseCountBy) {
 				delete(theIDofEvent);
+				// ID is removed because count became zero or less. Print zero.
 				System.out.println(0 + "\n");
 			} else {
+				theEvent.count -= decreaseCountBy;
+				TreeNode temp = theEvent.parent;
+				// Decrease the subtreeCounts up the tree by the decreased
+				// amount.
+				while (temp != null) {
+					temp.subtreeCount -= decreaseCountBy;
+				}
 				System.out.println(theEvent.count + "\n");
 			}
 		} else {
-			System.out.println(theEvent.count + "\n");
+			// theID is not present. Print zero.
+			System.out.println(0 + "\n");
 		}
 	}
 
@@ -126,7 +143,33 @@ public class RedBlackTree {
 	 * range.
 	 */
 	void inRange(int ID1, int ID2) {
+		if (ID1 == ID2) {
+			TreeNode node = findNode(ID1);
+			System.out.println(node.count + "\n");
+		} else {
+			TreeNode leftNode = findNode(ID1), rightNode = findNode(ID2);
+			TreeNode leastCommonAncestor = leastCommonAncestor(ID1, ID2);
+			int totalCountInRange = leastCommonAncestor.subtreeCount - getSubtreeEventCount(leftNode.leftChild)
+					- getSubtreeEventCount(rightNode.rightChild);
+			System.out.println(totalCountInRange + "\n");
+		}
+	}
 
+	TreeNode leastCommonAncestor(int leftID, int rightID) {
+		TreeNode temp = root;
+		while (temp != null) {
+			if (temp.key < leftID && temp.key < rightID) {
+				temp = temp.rightChild;
+			} else if (temp.key > leftID && temp.key > rightID) {
+				temp = temp.leftChild;
+			} else if (temp.key >= leftID && temp.key <= rightID) {
+				break;
+			} else {
+				// break because that range is not in the tree.
+				break;
+			}
+		}
+		return temp;
 	}
 
 	/*
@@ -192,11 +235,6 @@ public class RedBlackTree {
 			root = newNode;
 		}
 		insert1(newNode);
-		// newNode.subtreeCount = newNode.count +
-		// getSubtreeEventCount(newNode.leftChild)
-		// + getSubtreeEventCount(newNode.rightChild);
-		// not required? will be
-		// done during the insert process and during rotations?
 	}
 
 	/*
@@ -658,9 +696,6 @@ public class RedBlackTree {
 			if (parent.rightChild != null) {
 				parent.rightChild.parent = parent;
 			}
-			// does it change anything? set
-			// the previous node's child
-			// pointer to parent
 			parent.parent = node;
 			node.leftChild = parent;
 			node.parent = grandparent;
@@ -682,9 +717,6 @@ public class RedBlackTree {
 			if (parent.leftChild != null) {
 				parent.leftChild.parent = parent;
 			}
-			// does it change anything? set
-			// the previous node's child
-			// pointer to parent
 			parent.parent = node;
 			node.rightChild = parent;
 			node.parent = grandparent;
