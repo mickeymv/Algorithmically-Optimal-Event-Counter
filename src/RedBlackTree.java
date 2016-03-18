@@ -68,7 +68,15 @@ public class RedBlackTree {
 		TreeNode theEvent = findNode(theIDofEvent);
 		if (theEvent != null) {
 			if (theEvent.count <= decreaseCountBy) {
+				int countOfDeletedEvent = theEvent.count;
 				delete(theIDofEvent);
+				TreeNode temp = theEvent.parent;
+				// Decrease the subtreeCounts up the tree by the decreased
+				// amount.
+				while (temp != null) {
+					temp.subtreeCount -= countOfDeletedEvent;
+					temp = temp.parent;
+				}
 				// ID is removed because count became zero or less. Print zero.
 				System.out.println(0 + "\n");
 			} else {
@@ -114,7 +122,19 @@ public class RedBlackTree {
 			if (successorOfEvent != null) {
 				System.out.println(successorOfEvent.key + " " + successorOfEvent.count + "\n");
 			} else {
-				System.out.println("0 0\n");
+				TreeNode temp = theEvent.parent;
+				boolean found = false;
+				while (temp != null) {
+					if (temp.key > theIDofEvent) {
+						System.out.println(temp.key + " " + temp.count + "\n");
+						found = true;
+						break;
+					}
+					temp = temp.parent;
+				}
+				if (!found) {
+					System.out.println("0 0\n");
+				}
 			}
 		} else {
 			System.out.println("0 0\n");
@@ -133,7 +153,19 @@ public class RedBlackTree {
 			if (predecessorOfEvent != null) {
 				System.out.println(predecessorOfEvent.key + " " + predecessorOfEvent.count + "\n");
 			} else {
-				System.out.println("0 0\n");
+				TreeNode temp = theEvent.parent;
+				boolean found = false;
+				while (temp != null) {
+					if (temp.key < theIDofEvent) {
+						System.out.println(temp.key + " " + temp.count + "\n");
+						found = true;
+						break;
+					}
+					temp = temp.parent;
+				}
+				if (!found) {
+					System.out.println("0 0\n");
+				}
 			}
 		} else {
 			System.out.println("0 0\n");
@@ -152,8 +184,106 @@ public class RedBlackTree {
 		} else {
 			TreeNode leftNode = findNode(ID1), rightNode = findNode(ID2);
 			TreeNode leastCommonAncestor = leastCommonAncestor(ID1, ID2);
-			int totalCountInRange = leastCommonAncestor.subtreeCount - getSubtreeEventCount(leftNode.leftChild)
-					- getSubtreeEventCount(rightNode.rightChild);
+			int totalCountInRange = 0;
+
+			if (leastCommonAncestor != leftNode && leastCommonAncestor != rightNode) {
+				totalCountInRange = leastCommonAncestor.count + leftNode.count
+						+ getSubtreeEventCount(leftNode.rightChild) + rightNode.count
+						+ getSubtreeEventCount(rightNode.leftChild);
+
+				{
+					TreeNode previous = leftNode;
+					TreeNode temp = leftNode.parent;
+					while (temp != leastCommonAncestor) {
+						if (temp.key >= leftNode.key) { // Add these counts to
+														// the
+														// range
+							totalCountInRange += temp.count;
+							if (previous == temp.leftChild) {
+								totalCountInRange += getSubtreeEventCount(temp.rightChild);
+							}
+							// The below case never happens.
+							// else {
+							// totalCountInRange +=
+							// getSubtreeEventCount(temp.leftChild);
+							// }
+						}
+						previous = temp;
+						temp = temp.parent;
+					}
+				}
+				{
+					TreeNode previous = rightNode;
+					TreeNode temp = rightNode.parent;
+					while (temp != leastCommonAncestor) {
+						if (temp.key <= rightNode.key) { // Add these counts to
+															// the
+															// range
+							totalCountInRange += temp.count;
+							if (previous == temp.rightChild) {
+								totalCountInRange += getSubtreeEventCount(temp.leftChild);
+							}
+							// the below case never happens
+							// else {
+							// totalCountInRange +=
+							// getSubtreeEventCount(temp.rightChild);
+							// }
+						}
+						previous = temp;
+						temp = temp.parent;
+					}
+				}
+			} else {
+				// One of the selected nodes in the range is the least common
+				// ancestor. So consider only one branch of it for the range
+				// calculation.
+				if (leftNode == leastCommonAncestor) {
+					// consider only the right tree of the leftNode.
+					totalCountInRange = leftNode.count + rightNode.count + getSubtreeEventCount(rightNode.leftChild);
+					TreeNode previous = rightNode;
+					TreeNode temp = rightNode.parent;
+					while (temp != leastCommonAncestor) {
+						if (temp.key <= rightNode.key) { // Add these counts to
+															// the
+															// range
+							totalCountInRange += temp.count;
+							if (previous == temp.rightChild) {
+								totalCountInRange += getSubtreeEventCount(temp.leftChild);
+							}
+							// the below case never happens
+							// else {
+							// totalCountInRange +=
+							// getSubtreeEventCount(temp.rightChild);
+							// }
+						}
+						previous = temp;
+						temp = temp.parent;
+					}
+				} else {
+					// rightNode is the common ancestor, consider only its left
+					// tree
+					totalCountInRange = rightNode.count + leftNode.count + getSubtreeEventCount(leftNode.rightChild);
+					TreeNode previous = leftNode;
+					TreeNode temp = leftNode.parent;
+					while (temp != leastCommonAncestor) {
+						if (temp.key >= leftNode.key) { // Add these counts to
+														// the
+														// range
+							totalCountInRange += temp.count;
+							if (previous == temp.leftChild) {
+								totalCountInRange += getSubtreeEventCount(temp.rightChild);
+							}
+							// The below case never happens.
+							// else {
+							// totalCountInRange +=
+							// getSubtreeEventCount(temp.leftChild);
+							// }
+						}
+						previous = temp;
+						temp = temp.parent;
+					}
+				}
+			}
 			System.out.println(totalCountInRange + "\n");
 		}
 	}
@@ -885,9 +1015,11 @@ public class RedBlackTree {
 		tree.inRange(60, 60);
 		System.out.println("\nInrange of 10 29 \n");
 		tree.inRange(10, 29);
-		System.out.println("\nInrange of 2 100 \n");
-		tree.inRange(2, 100);
+		System.out.println("\nInrange of 2 105 \n");
+		tree.inRange(2, 105);
 		System.out.println("\nInrange of 35 64 \n");
 		tree.inRange(35, 64);
+		System.out.println("\nInrange of 18 64 \n");
+		tree.inRange(18, 64);
 	}
 }
