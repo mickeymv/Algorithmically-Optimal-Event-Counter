@@ -49,6 +49,7 @@ public class RedBlackTree {
 			// Increase the subtreeCounts up the tree by the increased amount.
 			while (temp != null) {
 				temp.subtreeCount += countIncreaseBy;
+				temp = temp.parent;
 			}
 		} else {
 			insert(theIDofEvent, countIncreaseBy);
@@ -72,11 +73,13 @@ public class RedBlackTree {
 				System.out.println(0 + "\n");
 			} else {
 				theEvent.count -= decreaseCountBy;
+				theEvent.subtreeCount -= decreaseCountBy;
 				TreeNode temp = theEvent.parent;
 				// Decrease the subtreeCounts up the tree by the decreased
 				// amount.
 				while (temp != null) {
 					temp.subtreeCount -= decreaseCountBy;
+					temp = temp.parent;
 				}
 				System.out.println(theEvent.count + "\n");
 			}
@@ -835,12 +838,12 @@ public class RedBlackTree {
 		RedBlackTree tree = new RedBlackTree();
 		for (int i : list) {
 			tree.insert(i, i);
-			System.out.println("\nThe tree after insertion of " + i);
-			tree.printTree();
+			// System.out.println("\nThe tree after insertion of " + i);
+			// tree.printTree();
 		}
 		System.out.println("\nThe tree after insertions");
 		tree.printTree();
-		int[] delList = { 60, 20, 105, 85, 80, 10 };
+		// int[] delList = { 60, 20, 105, 85, 80, 10 };
 		// int[] delList = { 85 };
 		// int[] delList = { 9, 8, 7 };//
 		// for (int i : delList) {
@@ -850,5 +853,41 @@ public class RedBlackTree {
 		// }
 		// System.out.println("\nThe tree after deletions");
 		// tree.printTree();
+		System.out.println("\nIncreasing 75 by 5\n");
+		tree.increase(75, 5);
+		tree.printTree();
+		System.out.println("\nIncreasing 65 by 10\n");
+		tree.increase(65, 10);
+		tree.printTree();
+		System.out.println("\nReducing 67 by 5\n");
+		tree.reduce(67, 5);
+		tree.printTree();
+		System.out.println("\nReducing 100 by 10\n");
+		tree.reduce(100, 10);
+		tree.printTree();
+		System.out.println("\nReducing 46 by 46\n");
+		tree.reduce(46, 46);
+		tree.printTree();
+		System.out.println("\nCount of 64\n");
+		tree.count(64);
+		System.out.println("\nCount of 77\n");
+		tree.count(77);
+		System.out.println("\nNext of 80\n");
+		tree.next(80);
+		System.out.println("\nNext of 100\n");
+		tree.next(100);
+		System.out.println("\nPrevious of 60\n");
+		tree.previous(60);
+		System.out.println("\nPrevious of 2\n");
+		tree.previous(2);
+		tree.printTree();
+		System.out.println("\nInrange of 60 60 \n");
+		tree.inRange(60, 60);
+		System.out.println("\nInrange of 10 29 \n");
+		tree.inRange(10, 29);
+		System.out.println("\nInrange of 2 100 \n");
+		tree.inRange(2, 100);
+		System.out.println("\nInrange of 35 64 \n");
+		tree.inRange(35, 64);
 	}
 }
