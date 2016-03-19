@@ -1,3 +1,9 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Scanner;
+
 /**
  * 
  * @author Mickey Vellukunnel
@@ -13,6 +19,9 @@ public class RedBlackTree {
 
 	private static final boolean RED = true;
 	private static final boolean BLACK = false;
+
+	private int treeMinimum = -1;
+	private int treeMaximum = -1;
 
 	private class TreeNode {
 		int key; // the ID.
@@ -55,7 +64,7 @@ public class RedBlackTree {
 			insert(theIDofEvent, countIncreaseBy);
 			theEvent = findNode(theIDofEvent);
 		}
-		System.out.println(theEvent.count + "\n");
+		System.out.println(theEvent.count);
 	}
 
 	/*
@@ -78,7 +87,7 @@ public class RedBlackTree {
 					temp = temp.parent;
 				}
 				// ID is removed because count became zero or less. Print zero.
-				System.out.println(0 + "\n");
+				System.out.println(0);
 			} else {
 				theEvent.count -= decreaseCountBy;
 				theEvent.subtreeCount -= decreaseCountBy;
@@ -89,11 +98,11 @@ public class RedBlackTree {
 					temp.subtreeCount -= decreaseCountBy;
 					temp = temp.parent;
 				}
-				System.out.println(theEvent.count + "\n");
+				System.out.println(theEvent.count);
 			}
 		} else {
 			// theID is not present. Print zero.
-			System.out.println(0 + "\n");
+			System.out.println(0);
 		}
 	}
 
@@ -104,9 +113,9 @@ public class RedBlackTree {
 	void count(int theIDofEvent) {
 		TreeNode theEvent = findNode(theIDofEvent);
 		if (theEvent != null) {
-			System.out.println(theEvent.count + "\n");
+			System.out.println(theEvent.count);
 		} else {
-			System.out.println(0 + "\n");
+			System.out.println(0);
 		}
 	}
 
@@ -115,29 +124,63 @@ public class RedBlackTree {
 	 * greater that theID. Print “0 0”, if there is no next ID. Time complexity:
 	 * O(log n).
 	 */
-	void next(int theIDofEvent) {
+	TreeNode next(int theIDofEvent, boolean shouldPrint) {
 		TreeNode theEvent = findNode(theIDofEvent);
 		if (theEvent != null) {
 			TreeNode successorOfEvent = successor(theEvent);
 			if (successorOfEvent != null) {
-				System.out.println(successorOfEvent.key + " " + successorOfEvent.count + "\n");
+				if (shouldPrint) {
+					System.out.println(successorOfEvent.key + " " + successorOfEvent.count);
+				}
+				return successorOfEvent;
 			} else {
 				TreeNode temp = theEvent.parent;
 				boolean found = false;
 				while (temp != null) {
 					if (temp.key > theIDofEvent) {
-						System.out.println(temp.key + " " + temp.count + "\n");
+						if (shouldPrint) {
+							System.out.println(temp.key + " " + temp.count);
+						}
 						found = true;
 						break;
 					}
 					temp = temp.parent;
 				}
 				if (!found) {
-					System.out.println("0 0\n");
+					if (shouldPrint) {
+						System.out.println("0 0");
+					}
+					return null;
+				} else {
+					return temp;
 				}
 			}
 		} else {
-			System.out.println("0 0\n");
+			// the ID is not present, so find the next fit
+			if (theIDofEvent > treeMaximum) {
+				if (shouldPrint) {
+					System.out.println("0 0");
+				}
+				return null;
+			}
+			int bestFitForLeftRange = treeMinimum;
+			TreeNode leftNode = null;
+			if (theIDofEvent <= treeMinimum) {
+				leftNode = findNode(treeMinimum);
+			} else {
+				while (!(theIDofEvent <= bestFitForLeftRange)) {
+					leftNode = next(bestFitForLeftRange, false);
+					bestFitForLeftRange = leftNode.key;
+				}
+			}
+			if (shouldPrint) {
+				if (leftNode == null) {
+					System.out.println("0 0");
+				} else {
+					System.out.println(leftNode.key + " " + leftNode.count);
+				}
+			}
+			return leftNode;
 		}
 	}
 
@@ -146,29 +189,111 @@ public class RedBlackTree {
 	 * less that theID. Print “0 0”, if there is no previous ID. Time
 	 * complexity: O(log n).
 	 */
-	void previous(int theIDofEvent) {
+	TreeNode previous(int theIDofEvent, boolean shouldPrint) {
 		TreeNode theEvent = findNode(theIDofEvent);
 		if (theEvent != null) {
 			TreeNode predecessorOfEvent = predecessor(theEvent);
 			if (predecessorOfEvent != null) {
-				System.out.println(predecessorOfEvent.key + " " + predecessorOfEvent.count + "\n");
+				if (shouldPrint) {
+					System.out.println(predecessorOfEvent.key + " " + predecessorOfEvent.count);
+				}
+				return predecessorOfEvent;
 			} else {
 				TreeNode temp = theEvent.parent;
 				boolean found = false;
 				while (temp != null) {
 					if (temp.key < theIDofEvent) {
-						System.out.println(temp.key + " " + temp.count + "\n");
+						if (shouldPrint) {
+							System.out.println(temp.key + " " + temp.count);
+						}
 						found = true;
 						break;
 					}
 					temp = temp.parent;
 				}
 				if (!found) {
-					System.out.println("0 0\n");
+					if (shouldPrint) {
+						System.out.println("0 0");
+					}
+					return null;
+				} else {
+					return temp;
 				}
 			}
 		} else {
-			System.out.println("0 0\n");
+			// the ID is not present, so find the next fit
+			if (theIDofEvent < treeMinimum) {
+				if (shouldPrint) {
+					System.out.println("0 0");
+				}
+				return null;
+			}
+			int bestFitForLeftRange = treeMaximum;
+			TreeNode rightNode = null;
+			if (theIDofEvent >= treeMaximum) {
+				rightNode = findNode(treeMaximum);
+			} else {
+				while (!(theIDofEvent >= bestFitForLeftRange)) {
+					rightNode = previous(bestFitForLeftRange, false);
+					bestFitForLeftRange = rightNode.key;
+				}
+			}
+			if (shouldPrint) {
+				if (rightNode == null) {
+					System.out.println("0 0");
+				} else {
+					System.out.println(rightNode.key + " " + rightNode.count);
+				}
+			}
+			return rightNode;
+		}
+	}
+
+	TreeNode getRangeLeftNode(int ID1) {
+		TreeNode leftNode = findNode(ID1);
+		if (leftNode == null) {
+			// This implies the ID isn't there in tree, so find the next best
+			// fit
+			if (ID1 > treeMaximum) {
+				return null;
+			}
+			int bestFitForLeftRange = treeMinimum;
+
+			if (ID1 <= treeMinimum) {
+				leftNode = findNode(treeMinimum);
+			} else {
+				while (!(ID1 <= bestFitForLeftRange)) {
+					leftNode = next(bestFitForLeftRange, false);
+					bestFitForLeftRange = leftNode.key;
+				}
+			}
+			return leftNode;
+		} else {
+			return leftNode;
+		}
+	}
+
+	TreeNode getRangeRightNode(int ID2) {
+		TreeNode rightNode = findNode(ID2);
+		if (rightNode == null) {
+			// This implies the ID isn't there in tree, so find the next best
+			// fit
+			if (ID2 < treeMinimum) {
+				return null;
+			}
+			int bestFitFoRightRange = treeMaximum;
+
+			if (ID2 >= treeMaximum) {
+				rightNode = findNode(treeMaximum);
+			} else {
+				while (!(ID2 >= bestFitFoRightRange)) {
+					rightNode = previous(bestFitFoRightRange, false);
+					bestFitFoRightRange = rightNode.key;
+				}
+			}
+			return rightNode;
+		} else {
+			return rightNode;
 		}
 	}
 
@@ -180,9 +305,24 @@ public class RedBlackTree {
 	void inRange(int ID1, int ID2) {
 		if (ID1 == ID2) {
 			TreeNode node = findNode(ID1);
-			System.out.println(node.count + "\n");
+			if (node == null) {
+				System.out.println(0);
+				return;
+			} else {
+				System.out.println(node.count);
+				return;
+			}
 		} else {
-			TreeNode leftNode = findNode(ID1), rightNode = findNode(ID2);
+			TreeNode leftNode = getRangeLeftNode(ID1), rightNode = getRangeRightNode(ID2);
+			if ((leftNode == null || rightNode == null) || (leftNode.key > rightNode.key)) {
+				System.out.println(0);
+				return;
+			} else if (leftNode == rightNode) {
+				System.out.println(leftNode.count);
+				return;
+			}
+			ID1 = leftNode.key;
+			ID2 = rightNode.key;
 			TreeNode leastCommonAncestor = leastCommonAncestor(ID1, ID2);
 			int totalCountInRange = 0;
 
@@ -284,7 +424,7 @@ public class RedBlackTree {
 					}
 				}
 			}
-			System.out.println(totalCountInRange + "\n");
+			System.out.println(totalCountInRange);
 		}
 	}
 
@@ -364,10 +504,44 @@ public class RedBlackTree {
 				parent.rightChild = newNode;
 			}
 			newNode.parent = parent;
+			if (newNode.key > treeMaximum) {
+				treeMaximum = newNode.key;
+			}
+			if (newNode.key < treeMinimum) {
+				treeMinimum = newNode.key;
+			}
 		} else {
 			root = newNode;
+			treeMinimum = newNode.key;
+			treeMaximum = newNode.key;
 		}
 		insert1(newNode);
+	}
+
+	int findMin() {
+		if (root == null) {
+			return -1;
+		} else {
+			TreeNode prev = root, temp = root.leftChild;
+			while (temp != null) {
+				prev = temp;
+				temp = temp.leftChild;
+			}
+			return prev.key;
+		}
+	}
+
+	int findMax() {
+		if (root == null) {
+			return -1;
+		} else {
+			TreeNode prev = root, temp = root.rightChild;
+			while (temp != null) {
+				prev = temp;
+				temp = temp.rightChild;
+			}
+			return prev.key;
+		}
 	}
 
 	/*
@@ -421,6 +595,7 @@ public class RedBlackTree {
 	 */
 	void deleteNode(TreeNode node) {
 		if (node != null) {
+			int deletedKey = node.key;
 			if (node.leftChild != null && node.rightChild != null) {
 				// CASE 2: 2 children: If the node has two children replace
 				// node with its predecessor, and delete the predecessor
@@ -487,6 +662,12 @@ public class RedBlackTree {
 					cleanIfNullLeaf(child);
 				}
 				cleanIfNullLeaf(child);
+			}
+			if (deletedKey == treeMinimum) {
+				treeMinimum = findMin();
+			}
+			if (deletedKey == treeMaximum) {
+				treeMaximum = findMax();
 			}
 		}
 	}
@@ -772,7 +953,7 @@ public class RedBlackTree {
 	 * so make it black.
 	 */
 	void insert1(TreeNode node) {
-		System.out.println("\nInside insert1 inserting " + node.key);
+		// System.out.println("\nInside insert1 inserting " + node.key);
 		if (node != null) {
 			if (node.parent == null) {
 				node.isRed = BLACK;
@@ -786,7 +967,7 @@ public class RedBlackTree {
 	 * Case 2 of red-black tree insertion, parent is black, do nothing.
 	 */
 	void insert2(TreeNode node) {
-		System.out.println("\nInside insert2 inserting " + node.key);
+		// System.out.println("\nInside insert2 inserting " + node.key);
 		if (node.parent.isRed == BLACK) {
 			return;
 		} else {
@@ -800,7 +981,7 @@ public class RedBlackTree {
 	 * recurse on grandparent.
 	 */
 	void insert3(TreeNode node) {
-		System.out.println("\nInside insert3 inserting " + node.key);
+		// System.out.println("\nInside insert3 inserting " + node.key);
 		TreeNode uncle = uncle(node);
 		if (uncle != null && uncle.isRed == RED) {
 			node.parent.isRed = BLACK;
@@ -820,7 +1001,7 @@ public class RedBlackTree {
 	 * grandparent's rightChild, then rotate left / right respectively.
 	 */
 	void insert4(TreeNode node) {
-		System.out.println("\nInside insert4 inserting " + node.key);
+		// System.out.println("\nInside insert4 inserting " + node.key);
 		TreeNode grandparent = grandparent(node);
 		TreeNode parent = node.parent;
 		if (grandparent.leftChild == parent && parent.rightChild == node) {
@@ -876,7 +1057,7 @@ public class RedBlackTree {
 	 * rotate right / left respectively, then paint .
 	 */
 	void insert5(TreeNode node) {
-		System.out.println("\nInside insert5 inserting " + node.key);
+		// System.out.println("\nInside insert5 inserting " + node.key);
 		TreeNode grandparent = grandparent(node);
 		TreeNode parent = node.parent;
 		parent.isRed = BLACK;
@@ -889,7 +1070,7 @@ public class RedBlackTree {
 	}
 
 	void leftRotate(TreeNode node) {
-		System.out.println("\nInside leftRotate of " + node.key);
+		// System.out.println("\nInside leftRotate of " + node.key);
 		if (node != null && node.rightChild != null) {
 			TreeNode rightChild = node.rightChild, grandparent = node.parent;
 			node.rightChild = rightChild.leftChild;
@@ -915,7 +1096,7 @@ public class RedBlackTree {
 	}
 
 	void rightRotate(TreeNode node) {
-		System.out.println("\nInside rightRotate of " + node.key);
+		// System.out.println("\nInside rightRotate of " + node.key);
 		if (node != null && node.leftChild != null) {
 			TreeNode leftChild = node.leftChild, grandparent = node.parent;
 			node.leftChild = leftChild.rightChild;
@@ -961,18 +1142,137 @@ public class RedBlackTree {
 	}
 
 	public static void main(String[] args) {
-		int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3, 64, 105, 46, 29, 61 };
+		// int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3, 64,
+		// 105, 46, 29, 61 };
 		// int[] list = { 20, 10, 35, 5, 18, 2, 4, 3 };
 		// int[] list = { 15, 0, 20, 3, 13, 14, 45, 34, };
 		// int[] list = { 6, 4, 8, 2, 5, 7, 9 };
 		RedBlackTree tree = new RedBlackTree();
-		for (int i : list) {
-			tree.insert(i, i);
-			// System.out.println("\nThe tree after insertion of " + i);
-			// tree.printTree();
+		// for (int i : list) {
+		// tree.insert(i, i);
+		// // System.out.println("\nThe tree after insertion of " + i);
+		// // tree.printTree();
+		// }
+		if (0 < args.length) {
+
+			String inputFileName = args[0];
+			File nodesInputFile = new File(inputFileName);
+			try {
+				FileReader inputFil = new FileReader(nodesInputFile);
+				BufferedReader in = new BufferedReader(inputFil);
+
+				String s = in.readLine();
+
+				int nodesCount = Integer.parseInt(s);
+				// System.out.println("Number of node in tree: " +
+				// nodesCount);
+				s = in.readLine();
+
+				for (int i = 1; i <= nodesCount; i++) {
+					String nums[] = s.split(" ");
+					int nodeID = Integer.parseInt(nums[0]);
+					int nodeCount = Integer.parseInt(nums[1]);
+
+					// System.out.println("Node in tree and count: " +
+					// nodeID +
+					// ", " + nodeCount);
+					tree.insert(nodeID, nodeCount);
+					s = in.readLine();
+				}
+				// create a scanner so we can read the command-line input
+				Scanner scanner = new Scanner(System.in);
+				s = scanner.nextLine();
+				while (!"quit".equals(s)) {
+					String commands[] = s.split(" ");
+					String command = commands[0];
+
+					switch (command) {
+					case "increase":
+						// System.out.println("\nInside increase! , " + s);
+						tree.increase(Integer.parseInt(commands[1]), Integer.parseInt(commands[2]));
+						break;
+					case "reduce":
+						// System.out.println("\nInside reduce!");
+						tree.reduce(Integer.parseInt(commands[1]), Integer.parseInt(commands[2]));
+						break;
+					case "count":
+						// System.out.println("\nInside count!");
+						tree.count(Integer.parseInt(commands[1]));
+						break;
+					case "inrange":
+						// System.out.println("\nInside inrange!");
+						tree.inRange(Integer.parseInt(commands[1]), Integer.parseInt(commands[2]));
+						break;
+					case "next":
+						// System.out.println("\nInside next!");
+						tree.next(Integer.parseInt(commands[1]), true);
+						break;
+					case "previous":
+						// System.out.println("\nInside previous!");
+						tree.previous(Integer.parseInt(commands[1]), true);
+						break;
+					default:
+						System.out.println("\nGot " + command + ", break!");
+						break;
+					}
+					s = scanner.nextLine();
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		} else {
+			File nodesInputFile = new File(System.getProperty("user.dir") + "/src/test_100.txt");
+			try {
+				FileReader inputFil = new FileReader(nodesInputFile);
+				BufferedReader in = new BufferedReader(inputFil);
+
+				String s = in.readLine();
+
+				int nodesCount = Integer.parseInt(s);
+				// System.out.println("Number of node in tree: " +
+				// nodesCount);
+				s = in.readLine();
+
+				for (int i = 1; i <= nodesCount; i++) {
+					String nums[] = s.split(" ");
+					int nodeID = Integer.parseInt(nums[0]);
+					int nodeCount = Integer.parseInt(nums[1]);
+
+					// System.out.println("Node in tree and count: " +
+					// nodeID +
+					// ", " + nodeCount);
+					tree.insert(nodeID, nodeCount);
+					s = in.readLine();
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			tree.increase(350, 100);
+			tree.reduce(350, 50);
+			tree.count(350);
+			tree.inRange(300, 1000);
+			tree.inRange(200, 299);
+			tree.inRange(200, 1000);
+			tree.inRange(300, 349);
+			tree.inRange(350, 350);
+			tree.inRange(349, 350);
+			tree.next(300, true);
+			tree.next(349, true);
+			tree.next(360, true);
+			tree.previous(360, true);
+			tree.previous(350, true);
+			tree.previous(0, true);
+			tree.reduce(271, 6);
+			tree.previous(350, true);
+			tree.reduce(271, 3);
+			tree.previous(350, true);
+			tree.previous(150, true);
 		}
-		System.out.println("\nThe tree after insertions");
-		tree.printTree();
+		// System.out.println("\nThe tree after insertions");
+		// tree.printTree();
 		// int[] delList = { 60, 20, 105, 85, 80, 10 };
 		// int[] delList = { 85 };
 		// int[] delList = { 9, 8, 7 };//
@@ -983,43 +1283,43 @@ public class RedBlackTree {
 		// }
 		// System.out.println("\nThe tree after deletions");
 		// tree.printTree();
-		System.out.println("\nIncreasing 75 by 5\n");
-		tree.increase(75, 5);
-		tree.printTree();
-		System.out.println("\nIncreasing 65 by 10\n");
-		tree.increase(65, 10);
-		tree.printTree();
-		System.out.println("\nReducing 67 by 5\n");
-		tree.reduce(67, 5);
-		tree.printTree();
-		System.out.println("\nReducing 100 by 10\n");
-		tree.reduce(100, 10);
-		tree.printTree();
-		System.out.println("\nReducing 46 by 46\n");
-		tree.reduce(46, 46);
-		tree.printTree();
-		System.out.println("\nCount of 64\n");
-		tree.count(64);
-		System.out.println("\nCount of 77\n");
-		tree.count(77);
-		System.out.println("\nNext of 80\n");
-		tree.next(80);
-		System.out.println("\nNext of 100\n");
-		tree.next(100);
-		System.out.println("\nPrevious of 60\n");
-		tree.previous(60);
-		System.out.println("\nPrevious of 2\n");
-		tree.previous(2);
-		tree.printTree();
-		System.out.println("\nInrange of 60 60 \n");
-		tree.inRange(60, 60);
-		System.out.println("\nInrange of 10 29 \n");
-		tree.inRange(10, 29);
-		System.out.println("\nInrange of 2 105 \n");
-		tree.inRange(2, 105);
-		System.out.println("\nInrange of 35 64 \n");
-		tree.inRange(35, 64);
-		System.out.println("\nInrange of 18 64 \n");
-		tree.inRange(18, 64);
+		// System.out.println("\nIncreasing 75 by 5\n");
+		// tree.increase(75, 5);
+		// tree.printTree();
+		// System.out.println("\nIncreasing 65 by 10\n");
+		// tree.increase(65, 10);
+		// tree.printTree();
+		// System.out.println("\nReducing 67 by 5\n");
+		// tree.reduce(67, 5);
+		// tree.printTree();
+		// System.out.println("\nReducing 100 by 10\n");
+		// tree.reduce(100, 10);
+		// tree.printTree();
+		// System.out.println("\nReducing 46 by 46\n");
+		// tree.reduce(46, 46);
+		// tree.printTree();
+		// System.out.println("\nCount of 64\n");
+		// tree.count(64);
+		// System.out.println("\nCount of 77\n");
+		// tree.count(77);
+		// System.out.println("\nNext of 80\n");
+		// tree.next(80);
+		// System.out.println("\nNext of 100\n");
+		// tree.next(100);
+		// System.out.println("\nPrevious of 60\n");
+		// tree.previous(60);
+		// System.out.println("\nPrevious of 2\n");
+		// tree.previous(2);
+		// tree.printTree();
+		// System.out.println("\nInrange of 60 60 \n");
+		// tree.inRange(60, 60);
+		// System.out.println("\nInrange of 10 29 \n");
+		// tree.inRange(10, 29);
+		// System.out.println("\nInrange of 2 105 \n");
+		// tree.inRange(2, 105);
+		// System.out.println("\nInrange of 35 64 \n");
+		// tree.inRange(35, 64);
+		// System.out.println("\nInrange of 18 64 \n");
+		// tree.inRange(18, 64);
 	}
 }
