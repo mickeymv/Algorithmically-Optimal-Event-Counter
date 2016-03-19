@@ -23,7 +23,7 @@ public class RedBlackTree {
 	private int treeMinimum = -1;
 	private int treeMaximum = -1;
 
-	private class TreeNode {
+	public class TreeNode {
 		int key; // the ID.
 		int count; // number of active events with the given ID.
 		int subtreeCount; // total count of all events' counts in the subtree
@@ -1127,6 +1127,26 @@ public class RedBlackTree {
 		System.out.println("\n");
 	}
 
+	void initializeTree() {
+
+	}
+
+	TreeNode sortedArrayToBST(TreeNode arr[], int start, int end) {
+		if (start > end) {
+			return null;
+		}
+		// same as (start+end)/2, avoids overflow.
+		int mid = start + (end - start) / 2;
+		TreeNode node = arr[mid];
+		node.leftChild = sortedArrayToBST(arr, start, mid - 1);
+		node.rightChild = sortedArrayToBST(arr, mid + 1, end);
+		return node;
+	}
+
+	void sortedArrayToRedBlackTree(TreeNode arr[], int n) {
+		root = sortedArrayToBST(arr, 0, n - 1);
+	}
+
 	/*
 	 * Print the nodes of the tree in an in-order looking (left child towards
 	 * the bottom and right child towards the top) fashion.
@@ -1139,187 +1159,5 @@ public class RedBlackTree {
 			// System.out.println(indentDots + node.key + "\n");
 			recursivelyPrintTree(node.leftChild, indentDots + ".");
 		}
-	}
-
-	public static void main(String[] args) {
-		// int[] list = { 60, 20, 75, 10, 85, 100, 80, 35, 5, 18, 2, 4, 3, 64,
-		// 105, 46, 29, 61 };
-		// int[] list = { 20, 10, 35, 5, 18, 2, 4, 3 };
-		// int[] list = { 15, 0, 20, 3, 13, 14, 45, 34, };
-		// int[] list = { 6, 4, 8, 2, 5, 7, 9 };
-		RedBlackTree tree = new RedBlackTree();
-		// for (int i : list) {
-		// tree.insert(i, i);
-		// // System.out.println("\nThe tree after insertion of " + i);
-		// // tree.printTree();
-		// }
-		if (0 < args.length) {
-
-			String inputFileName = args[0];
-			File nodesInputFile = new File(inputFileName);
-			try {
-				FileReader inputFil = new FileReader(nodesInputFile);
-				BufferedReader in = new BufferedReader(inputFil);
-
-				String s = in.readLine();
-
-				int nodesCount = Integer.parseInt(s);
-				// System.out.println("Number of node in tree: " +
-				// nodesCount);
-				s = in.readLine();
-
-				for (int i = 1; i <= nodesCount; i++) {
-					String nums[] = s.split(" ");
-					int nodeID = Integer.parseInt(nums[0]);
-					int nodeCount = Integer.parseInt(nums[1]);
-
-					// System.out.println("Node in tree and count: " +
-					// nodeID +
-					// ", " + nodeCount);
-					tree.insert(nodeID, nodeCount);
-					s = in.readLine();
-				}
-				// create a scanner so we can read the command-line input
-				Scanner scanner = new Scanner(System.in);
-				s = scanner.nextLine();
-				while (!"quit".equals(s)) {
-					String commands[] = s.split(" ");
-					String command = commands[0];
-
-					switch (command) {
-					case "increase":
-						// System.out.println("\nInside increase! , " + s);
-						tree.increase(Integer.parseInt(commands[1]), Integer.parseInt(commands[2]));
-						break;
-					case "reduce":
-						// System.out.println("\nInside reduce!");
-						tree.reduce(Integer.parseInt(commands[1]), Integer.parseInt(commands[2]));
-						break;
-					case "count":
-						// System.out.println("\nInside count!");
-						tree.count(Integer.parseInt(commands[1]));
-						break;
-					case "inrange":
-						// System.out.println("\nInside inrange!");
-						tree.inRange(Integer.parseInt(commands[1]), Integer.parseInt(commands[2]));
-						break;
-					case "next":
-						// System.out.println("\nInside next!");
-						tree.next(Integer.parseInt(commands[1]), true);
-						break;
-					case "previous":
-						// System.out.println("\nInside previous!");
-						tree.previous(Integer.parseInt(commands[1]), true);
-						break;
-					default:
-						System.out.println("\nGot " + command + ", break!");
-						break;
-					}
-					s = scanner.nextLine();
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-		} else {
-			File nodesInputFile = new File(System.getProperty("user.dir") + "/src/test_100.txt");
-			try {
-				FileReader inputFil = new FileReader(nodesInputFile);
-				BufferedReader in = new BufferedReader(inputFil);
-
-				String s = in.readLine();
-
-				int nodesCount = Integer.parseInt(s);
-				// System.out.println("Number of node in tree: " +
-				// nodesCount);
-				s = in.readLine();
-
-				for (int i = 1; i <= nodesCount; i++) {
-					String nums[] = s.split(" ");
-					int nodeID = Integer.parseInt(nums[0]);
-					int nodeCount = Integer.parseInt(nums[1]);
-
-					// System.out.println("Node in tree and count: " +
-					// nodeID +
-					// ", " + nodeCount);
-					tree.insert(nodeID, nodeCount);
-					s = in.readLine();
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			tree.increase(350, 100);
-			tree.reduce(350, 50);
-			tree.count(350);
-			tree.inRange(300, 1000);
-			tree.inRange(200, 299);
-			tree.inRange(200, 1000);
-			tree.inRange(300, 349);
-			tree.inRange(350, 350);
-			tree.inRange(349, 350);
-			tree.next(300, true);
-			tree.next(349, true);
-			tree.next(360, true);
-			tree.previous(360, true);
-			tree.previous(350, true);
-			tree.previous(0, true);
-			tree.reduce(271, 6);
-			tree.previous(350, true);
-			tree.reduce(271, 3);
-			tree.previous(350, true);
-			tree.previous(150, true);
-		}
-		// System.out.println("\nThe tree after insertions");
-		// tree.printTree();
-		// int[] delList = { 60, 20, 105, 85, 80, 10 };
-		// int[] delList = { 85 };
-		// int[] delList = { 9, 8, 7 };//
-		// for (int i : delList) {
-		// tree.delete(i);
-		// System.out.println("\nThe tree after deletion of " + i);
-		// tree.printTree();
-		// }
-		// System.out.println("\nThe tree after deletions");
-		// tree.printTree();
-		// System.out.println("\nIncreasing 75 by 5\n");
-		// tree.increase(75, 5);
-		// tree.printTree();
-		// System.out.println("\nIncreasing 65 by 10\n");
-		// tree.increase(65, 10);
-		// tree.printTree();
-		// System.out.println("\nReducing 67 by 5\n");
-		// tree.reduce(67, 5);
-		// tree.printTree();
-		// System.out.println("\nReducing 100 by 10\n");
-		// tree.reduce(100, 10);
-		// tree.printTree();
-		// System.out.println("\nReducing 46 by 46\n");
-		// tree.reduce(46, 46);
-		// tree.printTree();
-		// System.out.println("\nCount of 64\n");
-		// tree.count(64);
-		// System.out.println("\nCount of 77\n");
-		// tree.count(77);
-		// System.out.println("\nNext of 80\n");
-		// tree.next(80);
-		// System.out.println("\nNext of 100\n");
-		// tree.next(100);
-		// System.out.println("\nPrevious of 60\n");
-		// tree.previous(60);
-		// System.out.println("\nPrevious of 2\n");
-		// tree.previous(2);
-		// tree.printTree();
-		// System.out.println("\nInrange of 60 60 \n");
-		// tree.inRange(60, 60);
-		// System.out.println("\nInrange of 10 29 \n");
-		// tree.inRange(10, 29);
-		// System.out.println("\nInrange of 2 105 \n");
-		// tree.inRange(2, 105);
-		// System.out.println("\nInrange of 35 64 \n");
-		// tree.inRange(35, 64);
-		// System.out.println("\nInrange of 18 64 \n");
-		// tree.inRange(18, 64);
 	}
 }
