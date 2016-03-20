@@ -1127,24 +1127,39 @@ public class RedBlackTree {
 		System.out.println("\n");
 	}
 
-	void initializeTree() {
-
-	}
-
-	TreeNode sortedArrayToBST(TreeNode arr[], int start, int end) {
+	TreeNode sortedArrayToBST(TreeNode arr[], int start, int end, int currentHeight, int maxHeight) {
 		if (start > end) {
 			return null;
 		}
 		// same as (start+end)/2, avoids overflow.
 		int mid = start + (end - start) / 2;
 		TreeNode node = arr[mid];
-		node.leftChild = sortedArrayToBST(arr, start, mid - 1);
-		node.rightChild = sortedArrayToBST(arr, mid + 1, end);
+		node.leftChild = sortedArrayToBST(arr, start, mid - 1, currentHeight + 1, maxHeight);
+		node.rightChild = sortedArrayToBST(arr, mid + 1, end, currentHeight + 1, maxHeight);
+		if (node.leftChild != null) {
+			node.subtreeCount += node.leftChild.subtreeCount;
+			node.leftChild.parent = node;
+		}
+		if (node.rightChild != null) {
+			node.subtreeCount += node.rightChild.subtreeCount;
+			node.rightChild.parent = node;
+		}
+		if (currentHeight == maxHeight) {
+			node.isRed = RED;
+		}
 		return node;
 	}
 
 	void sortedArrayToRedBlackTree(TreeNode arr[], int n) {
-		root = sortedArrayToBST(arr, 0, n - 1);
+		treeMinimum = arr[0].key;
+		treeMaximum = arr[n - 1].key;
+		root = sortedArrayToBST(arr, 0, n - 1, 0, log2(n));
+	}
+
+	public static int log2(int n) {
+		if (n <= 0)
+			throw new IllegalArgumentException();
+		return 31 - Integer.numberOfLeadingZeros(n);
 	}
 
 	/*
