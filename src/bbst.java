@@ -70,8 +70,9 @@ public class bbst {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		} else {
+			System.out.println("\n Enter an input file name with the nodes in sorted order. \n");
 		}
-		System.out.println("\n Enter an input file name with the nodes in sorted order. \n");
 	}
 
 }
