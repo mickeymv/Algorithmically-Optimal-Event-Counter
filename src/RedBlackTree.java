@@ -8,7 +8,12 @@ import java.util.Scanner;
  * 
  * @author Mickey Vellukunnel
  * 
- *         Implement an event counter using Red-Black tree.
+ *         Implement an Event counter using Red-Black tree.
+ * 
+ *         Each event has two fields: ID and count, where count is the number of
+ *         active events with the given ID. The event counter stores only those
+ *         ID’s whose count is > 0. Once a count drops below 1, that ID is
+ *         removed.
  * 
  *         The required functions are; Increase, Reduce, Count, InRange, Next
  *         and Previous.
@@ -21,33 +26,55 @@ public class RedBlackTree {
 	private static final boolean RED = true;
 	private static final boolean BLACK = false;
 
-	// Variables which store the IDs of the max and min events (to facilitate
-	// range operations)
+	// Variables which store the IDs of the max and min Events (to facilitate
+	// range operations) (Initialized to -1 to indicate it's not set. This is a
+	// safe assumption because IDs are assumed to be positive integers)
 	private int treeMinimum = -1;
 	private int treeMaximum = -1;
 
-	// Structure of each node in the RedBlackTree Event Counter
+	// Structure of each node (which represents an "Event") in the RedBlackTree
+	// Event Counter
 	public class TreeNode {
 		int key; // the ID.
 		int count; // number of active events with the given ID.
 		int subtreeCount; // total count of all events' counts in the subtree
 							// rooted
-							// at this node. minimum = count (the count of the
+							// at this node. minimum = this.count (the count of
+							// the
 							// node itself)
+		/*
+		 * NOTE: This "subtreeCount" is an augmented order statistic variable
+		 * which helps to support the inRange operation in O(log n) time. This
+		 * variable is updated in constant time whenever an operation which
+		 * changes the tree structure relevant to this node (i.e. the subtree
+		 * below it) changes, i.e. whenver an insert, delete, increase or reduce
+		 * operation takes place.
+		 */
 		// subtreeCount = leftChild.subtreeCount + rightChild.subtreeCount +
-		// count
-		TreeNode parent, leftChild, rightChild;
+		// this.count
+		TreeNode parent, leftChild, rightChild; // pointers to the parent and
+												// children nodes.
 		boolean isRed; // Also the color of the node. By default (by using the
-						// constructor) it's RED (true)
+						// constructor) it's RED (true) (since during insert
+						// it's RED by default)
 
 		TreeNode(int key, int count) {
 			this.key = key;
 			this.count = count;
-			this.subtreeCount = count;
-			this.isRed = RED; // true
+			this.subtreeCount = count; // when adding to the leaf, subtree count
+										// is count itself
+			this.isRed = RED; // true. Since when inserting, leaf nodes are RED
+								// by default.
 		}
 	}
 
+	/*
+	 * RedBlack Tree constructor to initialize the RedBlack tree from an
+	 * ascending sorted array of n TreeNodes (Events) in O(n) time.
+	 * 
+	 * This is done by calling a recursive function sortedArrayToRBBST().
+	 * 
+	 */
 	RedBlackTree(TreeNode arrOfTreeNodesInAscendingSortedOrder[], int totalNumberOfNodesInSortedArray) {
 		treeMinimum = arrOfTreeNodesInAscendingSortedOrder[0].key;
 		treeMaximum = arrOfTreeNodesInAscendingSortedOrder[totalNumberOfNodesInSortedArray - 1].key;
@@ -61,7 +88,8 @@ public class RedBlackTree {
 
 	/*
 	 * Increase the count of the event theID by m. If theID is not present,
-	 * insert it. Print the count of theID after the addition. Time complexity:
+	 * insert it. Print the count of theID after the addition. Maintain the
+	 * value of the augmented variable subTreeCount as well. Time complexity:
 	 * O(log n).
 	 */
 	void increase(int theIDofEvent, int countIncreaseBy) {
@@ -70,7 +98,8 @@ public class RedBlackTree {
 			theEvent.count += countIncreaseBy;
 			theEvent.subtreeCount += countIncreaseBy;
 			TreeNode temp = theEvent.parent;
-			// Increase the subtreeCounts up the tree by the increased amount.
+			// Increase the subtreeCounts up the tree (till root) by the
+			// increased amount. Time complexity: O(log n)
 			while (temp != null) {
 				temp.subtreeCount += countIncreaseBy;
 				temp = temp.parent;
@@ -85,8 +114,9 @@ public class RedBlackTree {
 	/*
 	 * Decrease the count of theID by m. If theID’s count becomes less than or
 	 * equal to 0, remove theID from the counter. Print the count of theID after
-	 * the deletion, or 0 if theID is removed or not present. Time complexity:
-	 * O(log n).
+	 * the deletion, or 0 if theID is removed or not present. Maintain the value
+	 * of the augmented variable subTreeCount as well. Time complexity: O(log
+	 * n).
 	 */
 	void reduce(int theIDofEvent, int decreaseCountBy) {
 		TreeNode theEvent = findNode(theIDofEvent);
@@ -95,8 +125,9 @@ public class RedBlackTree {
 				int countOfDeletedEvent = theEvent.count;
 				delete(theIDofEvent);
 				TreeNode temp = theEvent.parent;
-				// Decrease the subtreeCounts up the tree by the decreased
-				// amount.
+				// Decrease the subtreeCounts up the tree till the root by the
+				// decreased
+				// amount (count of deleted event). Time complexity: O(log n)
 				while (temp != null) {
 					temp.subtreeCount -= countOfDeletedEvent;
 					temp = temp.parent;
@@ -107,8 +138,9 @@ public class RedBlackTree {
 				theEvent.count -= decreaseCountBy;
 				theEvent.subtreeCount -= decreaseCountBy;
 				TreeNode temp = theEvent.parent;
-				// Decrease the subtreeCounts up the tree by the decreased
-				// amount.
+				// Decrease the subtreeCounts up the tree till the root by the
+				// decreased
+				// amount. Time complexity: O(log n)
 				while (temp != null) {
 					temp.subtreeCount -= decreaseCountBy;
 					temp = temp.parent;
@@ -149,6 +181,9 @@ public class RedBlackTree {
 				}
 				return successorOfEvent;
 			} else {
+				// if there is no "successor" for the node, find the next
+				// greatest number by going up the tree. Time complexity: O(log
+				// n)
 				TreeNode temp = theEvent.parent;
 				boolean found = false;
 				while (temp != null) {
@@ -171,7 +206,8 @@ public class RedBlackTree {
 				}
 			}
 		} else {
-			// the ID is not present, so find the next fit
+			// the ID is not present, so find the next fit (used in inRange
+			// queries)
 			if (theIDofEvent > treeMaximum) {
 				if (shouldPrint) {
 					System.out.println("0 0");
@@ -214,6 +250,9 @@ public class RedBlackTree {
 				}
 				return predecessorOfEvent;
 			} else {
+				// if there is no "predecessor" for the node, find the next
+				// smallest number by going up the tree. Time complexity: O(log
+				// n)
 				TreeNode temp = theEvent.parent;
 				boolean found = false;
 				while (temp != null) {
@@ -236,21 +275,22 @@ public class RedBlackTree {
 				}
 			}
 		} else {
-			// the ID is not present, so find the next fit
+			// the ID is not present, so find the next fit (used in inRange
+			// queries)
 			if (theIDofEvent < treeMinimum) {
 				if (shouldPrint) {
 					System.out.println("0 0");
 				}
 				return null;
 			}
-			int bestFitForLeftRange = treeMaximum;
+			int bestFitForRightRange = treeMaximum;
 			TreeNode rightNode = null;
 			if (theIDofEvent >= treeMaximum) {
 				rightNode = findNode(treeMaximum);
 			} else {
-				while (!(theIDofEvent >= bestFitForLeftRange)) {
-					rightNode = previous(bestFitForLeftRange, false);
-					bestFitForLeftRange = rightNode.key;
+				while (!(theIDofEvent >= bestFitForRightRange)) {
+					rightNode = previous(bestFitForRightRange, false);
+					bestFitForRightRange = rightNode.key;
 				}
 			}
 			if (shouldPrint) {
@@ -264,6 +304,11 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Return the node in the tree which fits the leftEnd of the inRange query.
+	 * This could be the event which has ID equal to the specified leftRange or
+	 * the smallest event ID greater than it.
+	 */
 	TreeNode getRangeLeftNode(int ID1) {
 		TreeNode leftNode = findNode(ID1);
 		if (leftNode == null) {
@@ -288,6 +333,11 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Return the node in the tree which fits the rightEnd of the inRange query.
+	 * This could be the event which has ID equal to the specified rightRange or
+	 * the greatest event ID less than it.
+	 */
 	TreeNode getRangeRightNode(int ID2) {
 		TreeNode rightNode = findNode(ID2);
 		if (rightNode == null) {
@@ -315,10 +365,17 @@ public class RedBlackTree {
 	/*
 	 * Print the total count for IDs between ID1 and ID2 inclusively. Note, ID1
 	 * ≤ ID2. Time complexity: O(log n + s) where s is the number of IDs in the
-	 * range.
+	 * range. NOTE: Since we're using and maintaining an order statistic
+	 * augmented variable "subTreeCount" in each Event node in this RedBlackTree
+	 * implementation, this query in fact only takes O(log n) time to complete,
+	 * regardless of the number of IDs in the specified range ('s').
 	 */
 	void inRange(int ID1, int ID2) {
 		if (ID1 == ID2) {
+			// if leftRange equals rightRange, there is only one event
+			// associated with that ID, so its "count" would be the active
+			// events
+			// in that range.
 			TreeNode node = findNode(ID1);
 			if (node == null) {
 				System.out.println(0);
@@ -333,6 +390,10 @@ public class RedBlackTree {
 				System.out.println(0);
 				return;
 			} else if (leftNode == rightNode) {
+				// if leftRange equals rightRange, there is only one event
+				// associated with that ID, so its "count" would be the active
+				// events
+				// in that range.
 				System.out.println(leftNode.count);
 				return;
 			}
@@ -340,6 +401,11 @@ public class RedBlackTree {
 			ID2 = rightNode.key;
 			TreeNode leastCommonAncestor = leastCommonAncestor(ID1, ID2);
 			int totalCountInRange = 0;
+
+			/*
+			 * We use the subTreeCount in each event node, to calculate the
+			 * inRange count in O(log n) time as below.
+			 */
 
 			if (leastCommonAncestor != leftNode && leastCommonAncestor != rightNode) {
 				totalCountInRange = leastCommonAncestor.count + leftNode.count
@@ -357,11 +423,6 @@ public class RedBlackTree {
 							if (previous == temp.leftChild) {
 								totalCountInRange += getSubtreeEventCount(temp.rightChild);
 							}
-							// The below case never happens.
-							// else {
-							// totalCountInRange +=
-							// getSubtreeEventCount(temp.leftChild);
-							// }
 						}
 						previous = temp;
 						temp = temp.parent;
@@ -378,11 +439,6 @@ public class RedBlackTree {
 							if (previous == temp.rightChild) {
 								totalCountInRange += getSubtreeEventCount(temp.leftChild);
 							}
-							// the below case never happens
-							// else {
-							// totalCountInRange +=
-							// getSubtreeEventCount(temp.rightChild);
-							// }
 						}
 						previous = temp;
 						temp = temp.parent;
@@ -393,7 +449,8 @@ public class RedBlackTree {
 				// ancestor. So consider only one branch of it for the range
 				// calculation.
 				if (leftNode == leastCommonAncestor) {
-					// consider only the right tree of the leftNode.
+					// leftNode is the common ancestor, consider only the right
+					// tree of the leftNode.
 					totalCountInRange = leftNode.count + rightNode.count + getSubtreeEventCount(rightNode.leftChild);
 					TreeNode previous = rightNode;
 					TreeNode temp = rightNode.parent;
@@ -405,11 +462,6 @@ public class RedBlackTree {
 							if (previous == temp.rightChild) {
 								totalCountInRange += getSubtreeEventCount(temp.leftChild);
 							}
-							// the below case never happens
-							// else {
-							// totalCountInRange +=
-							// getSubtreeEventCount(temp.rightChild);
-							// }
 						}
 						previous = temp;
 						temp = temp.parent;
@@ -428,11 +480,6 @@ public class RedBlackTree {
 							if (previous == temp.leftChild) {
 								totalCountInRange += getSubtreeEventCount(temp.rightChild);
 							}
-							// The below case never happens.
-							// else {
-							// totalCountInRange +=
-							// getSubtreeEventCount(temp.leftChild);
-							// }
 						}
 						previous = temp;
 						temp = temp.parent;
@@ -443,6 +490,10 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Return the Event node which is the smallest common ancestor in the tree
+	 * for the given two event IDs.
+	 */
 	TreeNode leastCommonAncestor(int leftID, int rightID) {
 		TreeNode temp = root;
 		while (temp != null) {
@@ -463,12 +514,19 @@ public class RedBlackTree {
 	/*
 	 * Create a temporary NULL sentinal node and attach it to the parent node
 	 * for rebalancing purposes while deletion. This should be deleted after the
-	 * complete re-balance process it complete.
+	 * complete re-balance process it complete. This is used because there is no
+	 * explicit NULL leaf sentinal nodes in this implementation of the Red Black
+	 * Tree. For any Event node which has child as null, it's implied to be a
+	 * null sentinal leaf of color "BLACK" (isRed= false)
 	 */
 	TreeNode getNullLeaf(TreeNode parent, boolean onRight) {
 		TreeNode nullLeaf = new TreeNode(-1, -1);
-		nullLeaf.subtreeCount = -1;
-		nullLeaf.isRed = BLACK;
+		/*
+		 * Initialized to -1 to indicate it's not an event node but a null
+		 * sentinal leaf node. This is a safe assumption because IDs and counts
+		 * (and therefore subTreeCounts) are assumed to be positive integers.
+		 */
+		nullLeaf.isRed = BLACK; // since all leaf sentinal nodes are black
 		nullLeaf.parent = parent;
 		if (onRight) {
 			parent.rightChild = nullLeaf;
@@ -480,7 +538,8 @@ public class RedBlackTree {
 
 	/*
 	 * Removes the null leaf from the RBT and removes its parent's references to
-	 * it.
+	 * it. To be called after the rebalancing has been performed and the added
+	 * helper null sentinal leaf node is no longer required.
 	 */
 	void cleanIfNullLeaf(TreeNode node) {
 		if (node.key == -1) {
@@ -489,7 +548,11 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Binary search tree insert.
+	 * Binary search tree insert. Time complexity: O(log n). Maintain the value
+	 * of the augmented variable "subtreeCount" in constant time as we go down
+	 * the tree and place the newly inserted node. Also, call the insert1()
+	 * function to check if the newly inserted node satisfies the RedBlack tree
+	 * properties, and fix if not.
 	 */
 	void insert(int key, int count) {
 		TreeNode newNode = new TreeNode(key, count);
@@ -533,6 +596,10 @@ public class RedBlackTree {
 		insert1(newNode);
 	}
 
+	/*
+	 * Find and return the ID of the event with the minimum ID. Time complexity:
+	 * O(log n)
+	 */
 	int findMin() {
 		if (root == null) {
 			return -1;
@@ -546,6 +613,10 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Find and return the ID of the event with the maximum ID. Time complexity:
+	 * O(log n)
+	 */
 	int findMax() {
 		if (root == null) {
 			return -1;
@@ -560,7 +631,7 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * get the count of the node if it exists, if not, return zero.
+	 * Returns the subtreeCount of the node if it exists, if not, return zero.
 	 */
 	int getSubtreeEventCount(TreeNode node) {
 		if (node != null) {
@@ -571,11 +642,11 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Find node with the given ID, if not found, return null
+	 * Find node with the given ID, if not found (or if tree is empty), return
+	 * null. Time complexity: O(log n)
 	 */
 	TreeNode findNode(int ID) {
 		if (root != null) {
-			// First find the node
 			TreeNode node = root;
 			while (node != null && node.key != ID) {
 				if (ID < node.key) {
@@ -587,10 +658,10 @@ public class RedBlackTree {
 			if (node != null) { // node isn't null implies we've found the node
 				return node;
 			} else {
-				return null;
+				return null; // node not found
 			}
 		}
-		return null;
+		return null; // Tree is empty
 	}
 
 	/*
@@ -606,7 +677,9 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * deletes the given node.
+	 * deletes the given node. Also fixes RedBlackTree violations if any and
+	 * calls the delete2() method if further fixes are required. Time
+	 * complexity: O(log n)
 	 */
 	void deleteNode(TreeNode node) {
 		if (node != null) {
@@ -687,6 +760,11 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * The delete<i> methods (where 1<=i<=6, listed in order below) handles
+	 * different cases of the RedBlack Tree delete scenarios. They all take
+	 * constant time to run. Time complexity: O(1)
+	 */
 	/*
 	 * Case 1: N is the new root. In this case, we are done. We removed one
 	 * black node from every path, and the new root is black, so the properties
@@ -862,7 +940,8 @@ public class RedBlackTree {
 
 	/*
 	 * If the node to be deleted is black with ONE child, and the child is red,
-	 * simply repaint the child black.
+	 * simply repaint the child black. This is a trivial case of the delete
+	 * operation which is checked first.
 	 */
 	boolean deleteFix1(TreeNode node) {
 		if (node.isRed == BLACK && node.rightChild != null && node.rightChild.isRed == RED) {
@@ -876,8 +955,8 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * "Deletes" a node by removing all references to it and setting the parent
-	 * reference to null;
+	 * "Deletes" a node by removing all references to it and setting its parent
+	 * reference to it as null;
 	 */
 	void deleteNodeReferences(TreeNode node) {
 		if (node != null) {
@@ -894,7 +973,7 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Copy all the contents of one node to another.
+	 * Copy the contents (event ID and count) of one node to another.
 	 */
 	void replaceNode(TreeNode replaceeNode, TreeNode replacerNode) {
 		replaceeNode.key = replacerNode.key;
@@ -903,7 +982,7 @@ public class RedBlackTree {
 
 	/*
 	 * Returns the successor of the node, i.e. the left-most child in it's right
-	 * subtree.
+	 * subtree. Time complexity: O(log n)
 	 */
 	TreeNode successor(TreeNode node) {
 		TreeNode successor = null;
@@ -931,6 +1010,10 @@ public class RedBlackTree {
 		return predecessor;
 	}
 
+	/*
+	 * Returns the grandparent of a node if available, i.e. parent of its
+	 * parent.
+	 */
 	TreeNode grandparent(TreeNode node) {
 		if (node != null && node.parent != null && node.parent.parent != null) {
 			return node.parent.parent;
@@ -939,6 +1022,9 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Returns the uncle of a node if available, i.e. sibling of its parent.
+	 */
 	TreeNode uncle(TreeNode node) {
 		if (node != null && node.parent != null && node.parent.parent != null) {
 			if (node.parent == node.parent.parent.rightChild) {
@@ -951,6 +1037,10 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Returns the sibling of a node if available, i.e. other child of its
+	 * parent.
+	 */
 	TreeNode sibling(TreeNode node) {
 		if (node != null && node.parent != null) {
 			if (node == node.parent.rightChild) {
@@ -964,11 +1054,15 @@ public class RedBlackTree {
 	}
 
 	/*
+	 * The insert<i> methods (where 1<=i<=5, listed in order below) handles
+	 * different cases of the RedBlack Tree insert scenarios. They all take
+	 * constant time to run. Time complexity: O(1)
+	 */
+	/*
 	 * Case 1 of red-black tree insertion, node inserted is the first node, if
 	 * so make it black.
 	 */
 	void insert1(TreeNode node) {
-		// System.out.println("\nInside insert1 inserting " + node.key);
 		if (node != null) {
 			if (node.parent == null) {
 				node.isRed = BLACK;
@@ -982,7 +1076,6 @@ public class RedBlackTree {
 	 * Case 2 of red-black tree insertion, parent is black, do nothing.
 	 */
 	void insert2(TreeNode node) {
-		// System.out.println("\nInside insert2 inserting " + node.key);
 		if (node.parent.isRed == BLACK) {
 			return;
 		} else {
@@ -996,7 +1089,6 @@ public class RedBlackTree {
 	 * recurse on grandparent.
 	 */
 	void insert3(TreeNode node) {
-		// System.out.println("\nInside insert3 inserting " + node.key);
 		TreeNode uncle = uncle(node);
 		if (uncle != null && uncle.isRed == RED) {
 			node.parent.isRed = BLACK;
@@ -1013,10 +1105,10 @@ public class RedBlackTree {
 	 * Case 4 of red-black tree insertion, (parent is red, uncle is black)
 	 * newNode is an inside child of grandparent, i.e. newNode is either the
 	 * right child of grandparent's leftChild, or newNode is the left child of
-	 * grandparent's rightChild, then rotate left / right respectively.
+	 * grandparent's rightChild, then rotate left / right respectively. Maintain
+	 * the value of the augmented variable subTreeCount if rotating.
 	 */
 	void insert4(TreeNode node) {
-		// System.out.println("\nInside insert4 inserting " + node.key);
 		TreeNode grandparent = grandparent(node);
 		TreeNode parent = node.parent;
 		if (grandparent.leftChild == parent && parent.rightChild == node) {
@@ -1072,7 +1164,6 @@ public class RedBlackTree {
 	 * rotate right / left respectively, then paint .
 	 */
 	void insert5(TreeNode node) {
-		// System.out.println("\nInside insert5 inserting " + node.key);
 		TreeNode grandparent = grandparent(node);
 		TreeNode parent = node.parent;
 		parent.isRed = BLACK;
@@ -1084,8 +1175,12 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Left rotate is used to fix an unbalanced tree which is leaning towards
+	 * the right. This takes constant time. Also we need to fix the augmented
+	 * variable subTreeCount on rotate. Time complexity: O(1).
+	 */
 	void leftRotate(TreeNode node) {
-		// System.out.println("\nInside leftRotate of " + node.key);
 		if (node != null && node.rightChild != null) {
 			TreeNode rightChild = node.rightChild, grandparent = node.parent;
 			node.rightChild = rightChild.leftChild;
@@ -1110,8 +1205,12 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Right rotate is used to fix an unbalanced tree which is leaning towards
+	 * the left. This takes constant time. Also we need to fix the augmented
+	 * variable subTreeCount on rotate. Time complexity: O(1).
+	 */
 	void rightRotate(TreeNode node) {
-		// System.out.println("\nInside rightRotate of " + node.key);
 		if (node != null && node.leftChild != null) {
 			TreeNode leftChild = node.leftChild, grandparent = node.parent;
 			node.leftChild = leftChild.rightChild;
@@ -1136,12 +1235,26 @@ public class RedBlackTree {
 		}
 	}
 
+	/*
+	 * Helper function to show the tree.
+	 */
 	void printTree() {
 		System.out.println("\n");
 		recursivelyPrintTree(root, "");
 		System.out.println("\n");
 	}
 
+	/*
+	 * Recursive function which takes a sorted list and builds a RedBlack tree
+	 * from it by recursively splitting the list into two at the middle, and
+	 * assigning key, left and right based on the splits. This takes linear time
+	 * as it visits each node only once. Also, the RedBlack tree property is
+	 * maintained by coloring all the internal nodes at the last level red. This
+	 * is done by checking if the current level is at the max level for that
+	 * tree (comparing against log of the total number of nodes). Maintain the
+	 * value of the augmented variable subTreeCount as well. Time complexity:
+	 * O(n).
+	 */
 	TreeNode sortedArrayToRBBST(TreeNode arr[], int start, int end, int currentHeight, int maxHeight) {
 		if (start > end) {
 			return null;
@@ -1160,11 +1273,20 @@ public class RedBlackTree {
 			node.rightChild.parent = node;
 		}
 		if (currentHeight == maxHeight) {
+			/*
+			 * The RedBlack tree property is maintained by coloring all the
+			 * internal nodes at the last level red. This is done by checking if
+			 * the current level is at the max level for that tree (comparing
+			 * against log of the total number of nodes)
+			 */
 			node.isRed = RED;
 		}
 		return node;
 	}
 
+	/*
+	 * Find the log base 2 of a number using integer arithmetic.
+	 */
 	public static int log2(int n) {
 		if (n <= 0)
 			throw new IllegalArgumentException();
