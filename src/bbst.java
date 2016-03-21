@@ -7,7 +7,6 @@ import java.util.Scanner;
 public class bbst {
 
 	public static void main(String[] args) {
-		RedBlackTree tree = new RedBlackTree();
 		if (0 < args.length) {
 
 			String inputFileName = args[0];
@@ -22,17 +21,18 @@ public class bbst {
 				RedBlackTree.TreeNode[] sortedNodesArray = new RedBlackTree.TreeNode[nodesCount];
 				s = in.readLine();
 
+				RedBlackTree treeObjectForTreeNode = new RedBlackTree();
+
 				for (int i = 0; i < nodesCount; i++) {
 					String nums[] = s.split(" ");
 					int nodeID = Integer.parseInt(nums[0]);
 					int nodeCount = Integer.parseInt(nums[1]);
-					RedBlackTree.TreeNode node = tree.new TreeNode(nodeID, nodeCount);
+					RedBlackTree.TreeNode node = treeObjectForTreeNode.new TreeNode(nodeID, nodeCount);
 					node.isRed = false;
 					sortedNodesArray[i] = node;
 					s = in.readLine();
 				}
-
-				tree.sortedArrayToRedBlackTree(sortedNodesArray, nodesCount);
+				RedBlackTree tree = new RedBlackTree(sortedNodesArray, nodesCount);
 
 				// create a scanner so we can read the command-line input
 				Scanner scanner = new Scanner(System.in);

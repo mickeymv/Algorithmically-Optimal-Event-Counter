@@ -15,14 +15,18 @@ import java.util.Scanner;
  */
 public class RedBlackTree {
 
+	// Root of the RedBlackTree Event Counter
 	TreeNode root;
 
 	private static final boolean RED = true;
 	private static final boolean BLACK = false;
 
+	// Variables which store the IDs of the max and min events (to facilitate
+	// range operations)
 	private int treeMinimum = -1;
 	private int treeMaximum = -1;
 
+	// Structure of each node in the RedBlackTree Event Counter
 	public class TreeNode {
 		int key; // the ID.
 		int count; // number of active events with the given ID.
@@ -42,6 +46,17 @@ public class RedBlackTree {
 			this.subtreeCount = count;
 			this.isRed = RED; // true
 		}
+	}
+
+	RedBlackTree(TreeNode arrOfTreeNodesInAscendingSortedOrder[], int totalNumberOfNodesInSortedArray) {
+		treeMinimum = arrOfTreeNodesInAscendingSortedOrder[0].key;
+		treeMaximum = arrOfTreeNodesInAscendingSortedOrder[totalNumberOfNodesInSortedArray - 1].key;
+		root = sortedArrayToRBBST(arrOfTreeNodesInAscendingSortedOrder, 0, totalNumberOfNodesInSortedArray - 1, 0,
+				log2(totalNumberOfNodesInSortedArray));
+	}
+
+	public RedBlackTree() {
+		// TODO Auto-generated constructor stub
 	}
 
 	/*
@@ -1127,15 +1142,15 @@ public class RedBlackTree {
 		System.out.println("\n");
 	}
 
-	TreeNode sortedArrayToBST(TreeNode arr[], int start, int end, int currentHeight, int maxHeight) {
+	TreeNode sortedArrayToRBBST(TreeNode arr[], int start, int end, int currentHeight, int maxHeight) {
 		if (start > end) {
 			return null;
 		}
 		// same as (start+end)/2, avoids overflow.
 		int mid = start + (end - start) / 2;
 		TreeNode node = arr[mid];
-		node.leftChild = sortedArrayToBST(arr, start, mid - 1, currentHeight + 1, maxHeight);
-		node.rightChild = sortedArrayToBST(arr, mid + 1, end, currentHeight + 1, maxHeight);
+		node.leftChild = sortedArrayToRBBST(arr, start, mid - 1, currentHeight + 1, maxHeight);
+		node.rightChild = sortedArrayToRBBST(arr, mid + 1, end, currentHeight + 1, maxHeight);
 		if (node.leftChild != null) {
 			node.subtreeCount += node.leftChild.subtreeCount;
 			node.leftChild.parent = node;
@@ -1148,12 +1163,6 @@ public class RedBlackTree {
 			node.isRed = RED;
 		}
 		return node;
-	}
-
-	void sortedArrayToRedBlackTree(TreeNode arr[], int n) {
-		treeMinimum = arr[0].key;
-		treeMaximum = arr[n - 1].key;
-		root = sortedArrayToBST(arr, 0, n - 1, 0, log2(n));
 	}
 
 	public static int log2(int n) {
