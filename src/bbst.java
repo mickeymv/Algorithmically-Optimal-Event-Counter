@@ -4,6 +4,46 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
 
+/*
+ * Test Program for the project.
+ * 
+ * Contains the main function and expects as argument to the program “bbst” a test-input file. This way, it supports redirected input from a file "file-name" which contains the initial sorted list. 
+
+The command line for this mode is as follows Java:
+$java bbst file-name
+
+
+test file’s Input format:
+
+n 
+ID1 count1 
+ID2 count2 
+.
+.
+.
+IDn countn
+
+Here the assumption is that IDi < IDi+1 where IDi and counti are positive integers and the total count fits in 4-byte integer limits.
+
+After the input is read from the source file, we get into the interactive part of the program.
+
+This then will read the commands from the standard input stream and print the output to the standard output stream. 
+
+The command and the arguments should be separated by a space, not parenthesis or commas (i.e “inrange 3 5” instead of “InRange(3, 5)”). At the end of each command, there should be an EOL character. 
+
+For each command, the specified output will be printed to the standard output stream. An EOL character will be printed at the end of each command’s output. 
+
+To exit from the program, use “quit” command.
+
+To run the program, simply issue the ‘make’ command, and then use the generated ‘bbst’ executable.
+
+NOTE: Since this project was written using the Java language and runs with the heavy JVM, while running huge test files of the order of ~ 1GB, the program should be run with the max increase heap option set to an appropriate heap size (8GB heap for 1GB testfiles).
+
+i.e. java -Xmx8000m bbst test_file
+
+
+ */
+
 public class bbst {
 
 	public static void main(String[] args) {

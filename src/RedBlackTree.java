@@ -47,8 +47,8 @@ public class RedBlackTree {
 		 * which helps to support the inRange operation in O(log n) time. This
 		 * variable is updated in constant time whenever an operation which
 		 * changes the tree structure relevant to this node (i.e. the subtree
-		 * below it) changes, i.e. whenver an insert, delete, increase or reduce
-		 * operation takes place.
+		 * below it) changes, i.e. whenever an insert, delete, increase,
+		 * initialization or reduce operation takes place.
 		 */
 		// subtreeCount = leftChild.subtreeCount + rightChild.subtreeCount +
 		// this.count
@@ -512,21 +512,21 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Create a temporary NULL sentinal node and attach it to the parent node
-	 * for rebalancing purposes while deletion. This should be deleted after the
-	 * complete re-balance process it complete. This is used because there is no
-	 * explicit NULL leaf sentinal nodes in this implementation of the Red Black
-	 * Tree. For any Event node which has child as null, it's implied to be a
-	 * null sentinal leaf of color "BLACK" (isRed= false)
+	 * Create a temporary NULL sentinel node and attach it to the parent node
+	 * for re-balancing purposes while deletion. This should be deleted after
+	 * the complete re-balance process it complete. This is used because there
+	 * is no explicit NULL leaf sentinel nodes in this implementation of the Red
+	 * Black Tree. For any Event node which has child as null, it's implied to
+	 * be a null sentinel leaf of color "BLACK" (isRed= false)
 	 */
 	TreeNode getNullLeaf(TreeNode parent, boolean onRight) {
 		TreeNode nullLeaf = new TreeNode(-1, -1);
 		/*
 		 * Initialized to -1 to indicate it's not an event node but a null
-		 * sentinal leaf node. This is a safe assumption because IDs and counts
+		 * sentinel leaf node. This is a safe assumption because IDs and counts
 		 * (and therefore subTreeCounts) are assumed to be positive integers.
 		 */
-		nullLeaf.isRed = BLACK; // since all leaf sentinal nodes are black
+		nullLeaf.isRed = BLACK; // since all leaf sentinel nodes are black
 		nullLeaf.parent = parent;
 		if (onRight) {
 			parent.rightChild = nullLeaf;
@@ -665,7 +665,8 @@ public class RedBlackTree {
 	}
 
 	/*
-	 * Binary search tree delete after finding the node with the given key.
+	 * Binary search tree delete after finding the node with the given key. Time
+	 * complexity: O(log n).
 	 */
 	void delete(int key) {
 		TreeNode node = findNode(key);
@@ -956,7 +957,7 @@ public class RedBlackTree {
 
 	/*
 	 * "Deletes" a node by removing all references to it and setting its parent
-	 * reference to it as null;
+	 * reference to it as null. Only happens to a leaf node.
 	 */
 	void deleteNodeReferences(TreeNode node) {
 		if (node != null) {
