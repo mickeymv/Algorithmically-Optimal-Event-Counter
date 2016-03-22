@@ -8,7 +8,12 @@ public class bbst {
 
 	public static void main(String[] args) {
 		if (0 < args.length) {
-
+			/*
+			 * The program expects an input file with format as; n ID1 count1
+			 * ID2 count2 ... IDn countn Assume that IDi < IDi+1 where IDi and
+			 * counti are positive integers and the total count fits in 4-byte
+			 * integer limits.
+			 */
 			String inputFileName = args[0];
 			File nodesInputFile = new File(inputFileName);
 			try {
@@ -17,12 +22,14 @@ public class bbst {
 
 				String s = in.readLine();
 
+				// Count of number of events.
 				int nodesCount = Integer.parseInt(s);
 				RedBlackTree.TreeNode[] sortedNodesArray = new RedBlackTree.TreeNode[nodesCount];
-				s = in.readLine();
 
 				RedBlackTree treeObjectForTreeNode = new RedBlackTree();
-
+				// Read each Event ID and its count from each line from the
+				// input file
+				s = in.readLine();
 				for (int i = 0; i < nodesCount; i++) {
 					String nums[] = s.split(" ");
 					int nodeID = Integer.parseInt(nums[0]);
@@ -32,9 +39,12 @@ public class bbst {
 					sortedNodesArray[i] = node;
 					s = in.readLine();
 				}
+				// Initialize the RedBlackTree Event Counter with the events.
 				RedBlackTree tree = new RedBlackTree(sortedNodesArray, nodesCount);
 
-				// create a scanner so we can read the command-line input
+				// create a scanner so we can read the command-line input for
+				// the counter operations, and call the corresponding
+				// RedBlackTree implemented function.
 				Scanner scanner = new Scanner(System.in);
 				s = scanner.nextLine();
 				while (!"quit".equals(s)) {
@@ -66,6 +76,7 @@ public class bbst {
 					}
 					s = scanner.nextLine();
 				}
+				scanner.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
